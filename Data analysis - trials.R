@@ -2361,11 +2361,18 @@ shapiro.test(ARD4f1$rabun1log) #not normal
 hist(ARD4f1$rabuncsqrt)# o def NO aha, that's now binomial 
 shapiro.test(ARD4f1$rabuncsqrt) #nope
 
+boxplot(rabun1~plot, data = ARD4f1) #heterosc between H and L plots, not really within plots but try as re
+boxplot(rabun1~visit, data = ARD4f1) #some heterosc
+
 # going to go ahead and use the sqrt transformation in a lm
+
+
+# run models --------------------------------------------------------------
+
 
 # run the models & model selection ______________________________________________________________________________________________________________
 
-glm.poiss <- glm(rabun1~Tr*C, family = poisson(link = "log"), data = ARD4f1)
+# glm.poiss <- glm(rabun1~Tr*C, family = poisson(link = "log"), data = ARD4f1)
 # wait, they're all non-integer values... so can't use poisson at all
 
 # the standardizing to background complexity step makes all the integer values of abundance into non-integer values
@@ -2387,14 +2394,17 @@ curve(dgamma(x, gamma.alpha, gamma.beta),0,25,add = T, col = 'red')
 
 # it actually looks like it fits decently, maybe the gamma dist is a bit under?...
 
-glm.gam.3 <- glm(rabun1~Tr*C, family = Gamma(link = "identity"), data = ARD4f1) #from jenny, made no dif to AIC
-glm.invg <- glm(rabun1~Tr*C, family = inverse.gaussian(), data = ARD4f1)# apparently this behaves similarly to gamma, ok it's much worse in AIC comparison
+# glm.gam.3 <- glm(rabun1~Tr*C, family = Gamma(link = "identity"), data = ARD4f1) #from jenny, made no dif to AIC
+# glm.invg <- glm(rabun1~Tr*C, family = inverse.gaussian(), data = ARD4f1)# apparently this behaves similarly to gamma, ok it's much worse in AIC comparison
 
 # untransformed data: 
 lm.0 <- glm(rabun1~Tr*C, family = gaussian(), data = ARD4f1) #null model, lm of untransformed data
 glm.gam <- glm(rabun1~Tr*C, family = Gamma(), data = ARD4f1) # gamma glm
-glm.gam.1 <- glm(rabun1~Tr*C, family = Gamma(link = "log"), data = ARD4f1) #gamma glm, specify log link - guess generally recommended? 
-glm.gam.2 <- glm(rabun1~Tr*C, family = Gamma(link = "inverse"), data = ARD4f1) #inverse link
+# glm.gam.1 <- glm(rabun1~Tr*C, family = Gamma(link = "log"), data = ARD4f1) #gamma glm, specify log link - guess generally recommended?, no dif 
+# glm.gam.2 <- glm(rabun1~Tr*C, family = Gamma(link = "inverse"), data = ARD4f1) #inverse link, no dif
+glmm.gam <- glmmTMB(rabun1~Tr*C + (1|plot), family = Gamma(link="log"), data = ARD4f1)
+glmm.gam1 <- glmmTMB(rabun1~Tr*C + (1|visit), family = Gamma(link="log"), data = ARD4f1)
+glmm.gam2 <- glmmTMB(rabun1~Tr*C + (1|visit) + (1|plot), family = Gamma(link="log"), data = ARD4f1)
 
 #transformed data: 
 lmmsq <- lme(rabun1sqrt~Tr*C,random = ~1|plot, data = ARD4f1) #lmm with sqrt tranformed data,  plot as random effect
@@ -2402,10 +2412,16 @@ lmsq <- glm(rabun1sqrt~Tr*C, family = gaussian(), data = ARD4f1) #lm with sqrt t
 lmsq2 <- glm(rabun1sqrt~Tr*C + plot, family = gaussian(), data = ARD4f1) #plot as "nuissance" fixed var
 lmmsq2 <- lme(rabun1sqrt~Tr*C,random = ~1|visit, data = ARD4f1) #lmm with sqrt transformed data, visit as random effect
 
-AIC(lm.0, glm.gam, glm.gam.1, glm.gam.2, glm.gam.3, glm.invg) #glm.gam better, log link and inverse made no dif (maybe it's the default?)
+AIC(lm.0, glm.gam, glmm.gam, glmm.gam1, glmm.gam2) #glm.gam better, log link and inverse made no dif (maybe it's the default?)
 AIC(lmmsq, lmsq, lmsq2, lmmsq2) #lmsq better
 
 # lmsq best for transformed data, so just regular lm with no random effect
+# glm.gam and glmm.gam1 (visit as re) as re) best for untransformed data,
+
+car::Anova(glmm.gam)
+car::Anova(glmm.gam)
+car::Anova(glm.gam)
+anova(lmsq)
 
 
 # lmsq model evaluation ---------------------------------------------------
@@ -2419,10 +2435,10 @@ summary(lmsq)
 
 #ok what if I compare using glm and lm and aov for ancova...
 
-lmsq <- glm(rabun1sqrt~Tr*C, family = gaussian(), data = ARD4f1)
-lmsq1 <- lm(rabun1sqrt~Tr*C, data = ARD4f1)
-anc1 <- aov(rabun1sqrt~Tr*C, data = ARD4f1)
-AIC(lmsq,lmsq1, anc1)
+# lmsq <- glm(rabun1sqrt~Tr*C, family = gaussian(), data = ARD4f1)
+# lmsq1 <- lm(rabun1sqrt~Tr*C, data = ARD4f1)
+# anc1 <- aov(rabun1sqrt~Tr*C, data = ARD4f1)
+# AIC(lmsq,lmsq1, anc1)
 # they're the exact same... so since Tr and C are factors need to test heterogeneity of slopes also (if doing ancova)
 
 # model visual evaluation:
@@ -2435,6 +2451,7 @@ boxplot(J1a~Tr, data=ARD4f1, main="treatment",ylab="residuals") # looks a bit li
 boxplot(J1a~C, data=ARD4f1, main="complexity",ylab="residuals") #looks good
 qqnorm(J1a) # looks just ok
 qqline(J1a)
+par(mfrow=c(1,1))
 
 # test residuals for normality:
 shapiro.test(J1a) #according to this, not normal (p < 0.05)
@@ -2449,7 +2466,7 @@ bartlett.test(J1a ~as.factor(ARD4f1$C)) #hetero...
 leveneTest(J1a ~as.factor(ARD4f1$Tr), center = median) #homo
 leveneTest(J1a ~as.factor(ARD4f1$C), center = median) #hetero...
 
-
+# so the lm on sqrt transformed data did not perform great, some model violations, 
 
 # glm gam model evaluation ------------------------------------------------
 
@@ -2500,7 +2517,7 @@ leveneTest(K1a ~as.factor(ARD4f1$Tr), center = median) #homo
 leveneTest(K1a ~as.factor(ARD4f1$C), center = median) #hetero.. so same as lmsq
 
 
-# dharma ------------------------------------------------------------------
+# dharma for glm ------------------------------------------------------------------
 
 install.packages("DHARMa")
 library(DHARMa)
@@ -2537,6 +2554,64 @@ testUniformity(simoutglm) #KS test, p < 0.05, so not uniform
 
 # temporal autocorrelation
 testTemporalAutocorrelation(simulationOutput = simoutglm, time = ARD4f1$visit) #can only do this if there's unique values per time step
+
+
+# dharma for glmm.gam1 (visit as re) *use this -------------------------
+
+summary(glmm.gam1)
+car::Anova(glmm.gam1)
+summary(glmm.gam)
+car::Anova(glmm.gam)
+# summary(glm.gam)
+# anova(glm.gam)
+# summary(lmsq)
+# anova(lmsq)
+
+# install.packages("DHARMa")
+# library(DHARMa)
+# citation("DHARMa")
+
+#uses simulations to calculate residuals
+
+#dispersion test
+testDispersion(glmm.gam1)
+# p > 0.05, not overdispersed, p-value = 0.544
+
+simoutglmm.gam1 <- simulateResiduals(fittedModel = glmm.gam1, plot = T) #plots scaled resid
+residuals(simoutglmm.gam1)
+plot(simoutglmm.gam1) # qq looks like the deviation from uniformity is significant :S
+
+# the first is a qq plot to detect deviation from expected distribution (deafault is KS test)
+# outliers are those outside the simulation envelope
+# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+
+plotResiduals(simoutglmm.gam1, ARD4f1$Tr)
+plotResiduals(simoutglmm.gam1, ARD4f1$C) #some hetero, but not as bad as lmsq
+hist(simoutglmm.gam1) # doesn't look the best, but better than the glm
+hist(simoutglm)
+hist(simoutglmm.ga)
+
+
+#goodness of fit tests
+testResiduals(simoutglmm.gam1)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # only somewhat sig (p-value = 0.01076)
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers, p-value = 0.18
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, dispersion good, p-value = 0.544
+testUniformity(simoutglmm.gam1) #KS test, p-value = 0.01076, so not uniform, but less worse lol
+
+# Heteoscedastity 
+
+# temporal autocorrelation
+testTemporalAutocorrelation(simulationOutput = simoutglmm.gam1, time = ARD4f1$visit) #can only do this if there's unique values per time step
+
+ARD4.time <- ARD4f1 %>% 
+  group_by(visit) %>% 
+  summarize(mean.ab = mean (rabun1))
+
+testTemporalAutocorrelation(simulationOutput = simoutglmm.gam1, time = ARD4.time$visit)
+
+#no temporal autocorrelation (I guess makes sense since it's only 3 visits)
 
 
 # visualize predictions ---------------------------------------------------
@@ -2611,6 +2686,35 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
+
+# glmm.gam
+predglmmgam <- ggpredict(glmm.gam, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group) %>% 
+  mutate(pred = predicted - 5)
+
+ggplot() +
+  geom_col(data = ARD4f_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_col(data = predglmmgam,
+           aes(x = Tr,
+               y = pred,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predglmmgam,
+                aes(x = Tr,
+                    ymin = pred+std.error,
+                    ymax = pred-std.error),
+                width = 0.3) +
+  ggtitle("predicted on data - final density glm gam") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C)
 
 # just data
 ARD4f_sum <- ARD4f %>%
@@ -3051,6 +3155,7 @@ curve(dgamma(x, gamma.alpha1, gamma.beta1),0,25,add = T, col = 'red')
 #zuur uses pql
 # but bolker argues pql works poorly for poisson data where mean number of counts per treatment is less than 5
 # it also computes a quasilikelihood rather than a true likelihood 
+# oh and later in the book Zuur mentions that glmmPQL can't be used for AIC calculation and comparison
 
 # M0lm <- lm(rabun~Tr*C, data = ARD3ra)
 # M1glmm <- glmmPQL(rabun1~Tr*C, random = ~1|visit, family=Gamma(link="log"), data = ARD3ra1) #just visit
@@ -3095,6 +3200,24 @@ anova(M1glmmTMB, M2glmmTMB, M3glmmTMB) #the one with both visit and plot as re i
 summary(M3glmmTMB) #sig: L0, L50, L100, H0, H70, H100
 summary(M3glmm) # same, less mag
 
+
+car::Anova(M3glmmTMB)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: rabun1
+# Chisq Df Pr(>Chisq)    
+# Tr   27.6049  4  1.500e-05 ***
+#   C    32.9536  1  9.438e-09 ***
+#   Tr:C  8.3557  4    0.07938 .  
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+# model adequacy notes from zuur (p487)
+# range of graphical methods to assess how wekk a model fits the data
+# doesn't actually show the code in the book lol, just the plots
+
 # dharma glmm ______________________________________________________________________________________________________
 
 library(DHARMa)
@@ -3127,7 +3250,7 @@ testUniformity(simoutglmm) #KS test, p < 0.05, so not uniform
 testTemporalAutocorrelation(simulationOutput = simoutglm, time = ARD4f1$visit)
 
 
-# DO THE SAME FOR TMB GLMM:  M3glmmTMB ____________________________________
+# DO THE SAME FOR TMB GLMM:  M3glmmTMB _________________________________________________________________________________
 
 #dispersion test
 testDispersion(M3glmmTMB)
@@ -3160,6 +3283,7 @@ ARD3.time <- ARD3ra1 %>%
   summarize(mean.ab = mean (rabun1))
 
 testTemporalAutocorrelation(simulationOutput = simouttmb3, time = ARD3.time$visit) #not autocorrelated, p-value = 0.9228
+
 
 # VISUALIZE DATA__________________________________________________________________________________________________
 
@@ -3417,6 +3541,8 @@ bartlett.test(N1a ~as.factor(ARD3r1$C)) #homo,  p-value = 0.5593
 leveneTest(N1a ~as.factor(ARD3r1$Tr), center = median) #hetero, p=0.02519
 leveneTest(N1a ~as.factor(ARD3r1$C), center = median) #homo, 0.3618
 
+
+
 # visualize on data ______________________________________________________________________________________________________
 
 predlmt0 <- ggpredict(lmt0, terms = c("Tr", "C")) %>% 
@@ -3473,10 +3599,13 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
-# D. DIVERSITY METRICS ----------------------------------------------------
+# D. RICHNESS ----------------------------------------------------
 
 
 # richness
+
+
+
 
 
 
