@@ -3,7 +3,13 @@
 # 1) BACKGROUND COMPLEXITY ---------------------------------------------------
 
 
+
+
 # A. RECRUITMENT RATE -----------------------------------------------------
+
+
+
+
 # B. FINAL DENSITY ---------------------------------------------------------------------
 # C. DIVERSITY METRICS ----------------------------------------------------
 
@@ -2274,6 +2280,351 @@ ggplot() +
   facet_grid(.~C) 
 
 
+# gls and lmm with AR1 *use this ------------------------------------------
+
+
+library(nlme)
+library(lmerTest)
+library(readr)
+library(tidyverse)
+library(ggeffects)
+library(lme4)
+
+ARD_3_relrate <- read_csv("data/standardize to control calculations/ARD_3_relrate.csv")
+
+ARDrr <- ARD_3_relrate %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  # dplyr::rename(plot_grid_day = visit) %>% 
+  # filter(plot_grid_day != "HS - 8 - 3") %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rrate = as.numeric(rrate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+# cause they're all obv 0 on first day...
+
+
+hist(ARDrr$rrate)
+
+M0gls <- gls(rrate~ Tr*C, data = ARDrr) #since there's no correlation term this is essentiallya lm (I think this is my "mull model"?)
+summary(M0gls)
+#can't actually trust these values since violating assumption of independence...
+
+#make an acf plot to visualize if there's any autocorrelation
+E <- residuals(M0gls, type = "normalized")
+I1 <- !is.na(ARDr$rrate)
+Efull <- vector(length = length(ARDr$rrate))
+Efull <- NA
+Efull[I1] <- E
+acf(Efull, na.action = na.pass,
+    main = "Auto-correlation plot for residuals")
+
+#some kidn of temporal autocorrelation structure
+
+# test 4 dif autocorrelation strucutres: (following code from Zuur)____________________________________________________________________
+
+# compound symmetry
+M1gls <- gls(rrate~ Tr*C, correlation = corCompSymm(form = ~ visit), data = ARDrr)  #new one
+
+# unstructured covariance matrix
+glsM2<-gls(Tr*C,corr=corSymm(form = ~ visit),weights=varIdent(form=~1|visit),method="ML",data=ARDrr)
+# funktioniert immer wieder nicht!
+# it also ist nicht funktionen for me...
+
+# autoregressive var-cov matrix
+M2gls <- gls(rrate ~ Tr*C, correlation = corAR1(form = ~ visit|plot_grid), na.action = na.omit, data= ARDrr) #new
+
+# autoregressie with heterogeneous variance var-cov matrixr
+M3gls <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrr) #this one worked
+
+#best structure: and check plots
+M3gls <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDr)
+
+anova(M1gls,M2gls, M3gls) #M3gls has best structure
+
+M3glsresids <- resid(M3gls)
+
+plot(M3gls, which = 1)
+hist(M3glsresids)# yup looks normal
+qqnorm(M3glsresids)
+qqline(M3glsresids)
+acf(M3glsresids,na.action = na.pass, main = "autocorrelation plot for resids")
+
+boxplot(rrate~plot, data = ARDrr) # doesn't look like there's much going on here, there's 4 levels, the plots are on the same reef so not that far apart, may not end up being important is my guess
+boxplot(rrate~visit, data = ARDrr) # vury interesting, perhaps the autoregressive w het var-cov may actually makes sense looking at this! :)
+
+#OK So the best autoregressive structure is M3gls, with autoregressive variance-covariance structure with heterogeneous variances
+#from her code:
+# the data has an autoregressive var-cov structure with heterogeneous variances
+# what does it mean? it means observations that are more proximate are correlated and variances change over time (obs. closer to each other are more similar)
+
+#Next: Check random effects with the correct autocorrelation structre (from M3gls) _________________________________________
+lmmM1 <- lme(rrate~Tr*C, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr)
+lmmM2 <- lme(rrate~Tr*C, random = ~1|plot/visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) #convergence issues
+lmmM3 <- lme(rrate~Tr*C, random = ~1|plot, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) #convergence issues
+
+# I think all the ones with plot weren't converging because as I saw before with the ?iSSingular error with lme4, plot was not explaining any of the 
+# variation, and I saw that from the boxplots too. 
+
+#LmmM1 is the only one that converges, checks out though with what I've seen so far: 
+
+# now check if adding plot as a "nuissance" fixed effect matters__________________________________________________________
+
+lmmM1.1 <- lmmM1 <- lme(rrate~Tr*C + plot, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr)
+lm2 <- gls(rrate~ Tr*C + plot, data = ARDrr)
+# getting Singularity error: it looks like this is because it's not telling you new informaiton (confounding variables)
+
+# test significance of random effect visit and AR1 structure__________________________________________________________________________________
+
+M0gls <- gls(rrate~ Tr*C, data = ARDrr) #the null model (lm) - no random effect or autoregression structure
+lmmM1a <- lme(rrate~Tr*C, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) #AR1 structure and random effect
+lmmM1b <- gls(rrate~Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) # just AR1 structure
+lmmM1c <- lme(rrate~Tr*C, random = ~1|visit, data=ARDrr) #just random effect
+
+anova(M0gls,lmmM1a, lmmM1b, lmmM1c) 
+
+# Model df      AIC      BIC    logLik   Test  L.Ratio p-value
+# M0gls      1 11 4723.407 4779.306 -2350.704                        
+# lmmM1a     2 27 4169.527 4306.733 -2057.763 1 vs 2 585.8803  <.0001
+# lmmM1b     3 26 3895.571 4027.696 -1921.786 2 vs 3 271.9555  <.0001
+# lmmM1c     4 12 4710.318 4771.299 -2343.159 3 vs 4 842.7471  <.0001
+
+# it looks like the just AR1 structure is my best fitting model (without the random effect), then the model with just the random effect, then the AR1 lmm
+# but I need to think about if it makes sense to use visit defnied in AR1 AND as a random effect
+# ie is that just trying to deal with heteroscedastity twice in the same model?
+summary(lmmM1a) #AR1 structre and random effect
+summary(lmmM1b) #just AR1 structure
+
+# inspect models: _________________________________________________________________________________________________________
+
+# inspecting heteroscedacity of residuals - lmm w AR1
+H1a<-resid(lmmM1a,type="normalized")
+H2a<-fitted(lmmM1a)
+par(mfrow=c(2,2))
+plot(x=H2a,y=H1a, xlab="fitted values", ylab="residuals")
+boxplot(H1a~visit, data=ARDr, main="visit",ylab="residuals")
+boxplot(H1a~Tr, data=ARDr, main="treatment",ylab="residuals")
+boxplot(H1a~C, data=ARDr, main="complexity",ylab="residuals")
+
+# inspecting heteroscedacity of residuals - gls (just AR1)        #this looks best
+H1b<-resid(lmmM1b,type="normalized")
+H2b<-fitted(lmmM1b)
+par(mfrow=c(2,2))
+plot(x=H2b,y=H1b, xlab="fitted values", ylab="residuals")
+boxplot(H1b~visit, data=ARDr, main="visit",ylab="residuals")
+boxplot(H1b~Tr, data=ARDr, main="treatment",ylab="residuals")
+boxplot(H1b~C, data=ARDr, main="complexity",ylab="residuals")
+
+# inspecting heteroscedacity of residuals - just lmm (no AR1)
+H1c<-resid(lmmM1c,type="normalized")
+H2c<-fitted(lmmM1c)
+par(mfrow=c(2,2))
+plot(x=H2c,y=H1c, xlab="fitted values", ylab="residuals")
+boxplot(H1c~visit, data=ARDr, main="visit",ylab="residuals")
+boxplot(H1c~Tr, data=ARDr, main="treatment",ylab="residuals")
+boxplot(H1c~C, data=ARDr, main="complexity",ylab="residuals")
+
+par(mfrow=c(1,1))
+
+# checking for normality of residulas
+
+qqnorm(H1a, main = "AR1 lmm") 
+qqline(H1a)
+qqnorm(H1b, main = "just gls")  # I feel like this one is less worse
+qqline(H1b)
+qqnorm(H1c, main = "just lmm")
+qqline(H1c)
+
+acf(H1a,na.action = na.pass, main = "autocorrelation plot for resids AR1 lmm")
+acf(H1b,na.action = na.pass, main = "autocorrelation plot for resids gls")  # this is the only one that looks dif
+acf(H1c,na.action = na.pass, main = "autocorrelation plot for resids just lmm")
+
+
+# use summary() and not anova() according to Zuur et al. (p. 135) as this implements sequential testing
+# region is not significant but we cannot get rig of it because we have the interaction and each factor will be listed seperately, automatically
+#WARNING: R provides Type I sequential SS, not the default Type III marginal SS reported by SAS and SPSS.
+# In a nonorthogonal design with more than one term on the right hand side of the equation order will matter
+# (i.e., A+B and B+A will produce different results)! We will need use the drop1( ) function to produce the familiar Type III results.
+# It will compare each term with the full model. See also Crawley p. 504+p.507
+anova(lmmM1a,type="marginal")
+anova(lmmM1a)
+drop1(lmmM1a,~.,test="F")
+summary(lmmM1a)
+
+anova(lmmM1b,type="marginal")
+anova(lmmM1b)
+# drop1(lmmM1b,~.,test="F")
+# summary(lmmM1b)
+
+
+# plot model results over data _____________________________________________________________________________________________________
+
+# lmm
+predM1a <- ggpredict(lmmM1a, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group)
+
+ARDr_sum <- ARDr %>% 
+  group_by(Tr, C) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(1280))
+
+#same graph: ()
+ggplot() +
+  geom_col(data = ARDr_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.35) +
+  geom_col(data = predM1a,
+           aes(x = Tr,
+               y = predicted,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM1a,
+                aes(x = Tr,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  ggtitle("predicted AR1 lmm (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+# lgls
+predM1b <- ggpredict(lmmM1b, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group)
+
+ARDr_sum <- ARDrr %>% 
+  group_by(Tr, C) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(1200))
+
+#same graph: ()                       #honestly plot looks so bad, but they all do? 
+ggplot() +
+  geom_col(data = ARDr_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.35) +
+  geom_col(data = predM1b,
+           aes(x = Tr,
+               y = predicted,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM1b,
+                aes(x = Tr,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  ggtitle("predicted gls (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+
+# just lmm
+predM1c <- ggpredict(lmmM1c, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group)
+
+ARDr_sum <- ARDrr %>% 
+  group_by(Tr, C) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(1200))
+
+#same graph: ()                 #this plot looks suspiciously good? like wayyyy too much...
+ggplot() +
+  geom_col(data = ARDr_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.35) +
+  geom_col(data = predM1c,
+           aes(x = Tr,
+               y = predicted,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM1c,
+                aes(x = Tr,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  ggtitle("predicted just lmm (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+summary(lmmM1c)
+
+# null
+predM0 <- ggpredict(M0gls, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group)
+
+ARDr_sum <- ARDr %>% 
+  group_by(Tr, C) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(1280))
+
+#same graph: ()
+ggplot() +
+  geom_col(data = ARDr_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.35) +
+  geom_col(data = predM0,
+           aes(x = Tr,
+               y = predicted,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM0,
+                aes(x = Tr,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  ggtitle("predicted just lm") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+#wow this fits my model WAY better than the other two...
+
+# just data plotted w s.e.:
+ARDr_sum <- ARDrr %>% 
+  group_by(Tr, C) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(1200))
+
+ggplot() +
+  geom_col(data = ARDr_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDr_sum,
+                aes(x = Tr,
+                    ymin = rrate.mean+rrate.se,
+                    ymax = rrate.mean-rrate.se),
+                width = 0.3) +
+  ggtitle("just data") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
 # B. RELATIVE FINAL DENSITY ---------------------------------------------------------------------
 
 # for the relative final density bit I could either consider repeated measures factorial design (if assumptions are met) or glmm like originally planned
@@ -3285,6 +3636,8 @@ ARD3.time <- ARD3ra1 %>%
 testTemporalAutocorrelation(simulationOutput = simouttmb3, time = ARD3.time$visit) #not autocorrelated, p-value = 0.9228
 
 
+# tukey.4f <- TukeyHSD(M3glmmTMB) # doesn't work for glmmtmb
+
 # VISUALIZE DATA__________________________________________________________________________________________________
 
 #plot both:     #wow actualy looks pretty good...
@@ -3609,4 +3962,140 @@ ggplot() +
 
 
 
+# option 1: glmmTMB  ------------------------------------------------------
 
+ARD_3_relrich <- read_csv("data/standardize to control calculations/ARD_3_relrich.csv")
+
+
+ARD3rr <- ARD_3_relrich %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity)
+
+hist(ARD3rr$rrich)
+range(ARD3rr$rrich) #-1.750 to 6.625 (so should add 2 to make all positive values)
+mean(ARD3rr$rrich) #0.4625
+var(ARD3rr$rrich) #1.6681
+boxplot(rrich~plot, data = ARD3rr) # could be something happening here spatially
+boxplot(rrich~visit, data = ARD3rr) # no pattern really, just a bit all over 
+
+#add constant to make positive
+
+ARD3rr1 <- ARD3rr %>% 
+  mutate(rrich1 = rrich + 2)
+
+# assess gamma over data distribution ________________________________________________________________________________________
+
+r.mean1 = mean(ARD3rr1$rrich1)
+r.var1 = var(ARD3rr1$rrich1)
+gamma.beta1r = r.mean1/r.var1
+gamma.alpha1r = r.mean1*gamma.beta1r
+
+hist(ARD3rr1$rrich1, prob = T)
+curve(dgamma(x, gamma.alpha1r, gamma.beta1r),0,25,add = T, col = 'red')
+
+#looks pretty good actually
+
+
+# choose random effect structure________________________________________________________________________________________________
+
+M0glmmTMBr <- glmmTMB(rrich1~Tr*C, family=Gamma(link="log"), data = ARD3rr1)
+M1glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|visit), family=Gamma(link="log"), data = ARD3rr1) #just visit as re
+M2glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
+M3glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) #both visit and plot as re
+
+AIC(M0glmmTMBr, M1glmmTMBr, M2glmmTMBr, M3glmmTMBr) #M1 is the best, visit as re, but M3 with both plot and visit is just 2 above
+
+car::Anova(M1glmmTMBr)
+summary(M1glmmTMBr)
+# summary(M3glmmTMBr)
+
+# model assessment with dharma__________________________________________________________________________________________________
+
+#dispersion test
+testDispersion(M1glmmTMBr)
+# p > 0.05, not oversdispersed, p-value = 0.616
+
+simouttmb3r <- simulateResiduals(fittedModel =M1glmmTMBr, plot = T) # wow this looks great
+residuals(simouttmb3r)
+plot(simouttmb3r) # lots of issues in qq: lack onf uniformity, outliers and dispersion
+# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+
+plotResiduals(simouttmb3r, ARD3rr1$Tr) #looks good
+plotResiduals(simouttmb3r, ARD3rr1$C) #looks good
+hist(simouttmb3r) # I think just ok, but outlier test is non-sig so not too worried 
+
+#goodness of fit tests
+testResiduals(simouttmb3r)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.6721
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig, p = 1
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, p-value = 0.616
+testUniformity(simouttmb3r) #KS test, p < 0.05, so not uniform
+
+# Heteoscedastity 
+
+# temporal autocorrelation
+testTemporalAutocorrelation(simulationOutput = simouttmb3, time = ARD3ra1$visit) #didn't work, oh ya need 1 obs per time value
+
+ARD3r.time <- ARD3rr1 %>% 
+  group_by(visit) %>% 
+  summarize(mean.r = mean (rrich1))
+
+testTemporalAutocorrelation(simulationOutput = simouttmb3r, time = ARD3r.time$visit) #not autocorrelated,p-value = 0.1277
+
+# visualize __________________________________________________________________________________________________________________
+
+predM3glmmr <- ggpredict(M1glmmTMBr, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group) %>% 
+  mutate(pred2 = predicted - 2)
+
+ggplot() +                              # looks pretty good actually
+  geom_col(data = ARDrr_sum,
+           aes(x = Tr,
+               y = rrich.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_col(data = predM3glmmr ,
+           aes(x = Tr,
+               y = pred2,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM3glmmr ,
+                aes(x = Tr,
+                    ymin = pred2+std.error,
+                    ymax = pred2-std.error),
+                width = 0.3) +
+  ggtitle("predicted richness (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+# just data plotted w s.e.:
+ARDrr_sum <- ARD3rr %>% 
+  group_by(Tr, C) %>% 
+  summarize(rrich.mean = mean(rrich), rrich.sd = sd(rrich)) %>%
+  mutate(rrich.se = rrich.sd/sqrt(1280))
+
+ggplot() +
+  geom_col(data = ARDrr_sum,
+           aes(x = Tr,
+               y = rrich.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDrr_sum,
+                aes(x = Tr,
+                    ymin = rrich.mean+rrich.se,
+                    ymax = rrich.mean-rrich.se),
+                width = 0.3) +
+  ggtitle("just data - ARD 3 rrich whole study") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C)

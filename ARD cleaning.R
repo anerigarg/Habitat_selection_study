@@ -350,6 +350,83 @@ ggplot(data = ARD_4to6_sum) +
 
 
 
+
+# get species richness values (ARD3) ---------------------------------------------
+
+ARD_post_out_plant_new <- read_csv("data/clean data frames (after outlier removal)/ARD_post_out_plant_new.csv")
+ARD <- ARD_post_out_plant_new %>% 
+  filter(TL <= 6)
+
+unique(ARD$date)
+
+# make new col called size class, bin by TL (0-3) and (4-6)
+is.numeric(ARD$TL)
+ARD$size.class <- "0-3"
+ARD$size.class[ARD$TL >= 4 & ARD$TL <= 6] <- "4-6"
+
+ARD_3 <- ARD %>% 
+  filter(size.class == "0-3") 
+
+# group by date instead, that way you can do the cut-off to get rid of the first day and get rid of the day where the boat was driving over us
+ARD_3_rich <- ARD_3 %>% 
+  dplyr:: group_by(plot, grid_number, date) %>% 
+  dplyr:: summarise(rich = n_distinct(common_name)) %>% 
+  dplyr:: ungroup() %>% 
+  complete(nesting(plot, grid_number), date, fill = list(rich = 0))
+
+unique(ARD_3$common_name) #about 35 spp over whole exp
+
+# combine plot_grid: 
+
+ARD_3_rich$plot_grid <- paste(ARD_3_rich$plot, "-", ARD_3_rich$grid_number)
+ARD_lookup <- read_csv("data/ARD_lookup.csv") # add treatment and complexity:
+ARD_3_rich1 <- full_join(ARD_3_rich, ARD_lookup)
+
+# add days_since_outplanting: (starts all from day 1 on June 5)
+
+ArtR_days_since_lookup <- read_csv("data/add days since outplanting/ArtR_days_since_lookup.csv")
+
+#1) make a col in each df that is common (date-plot)
+
+ARD_3_rich1$plot_date <- paste(ARD_3_rich1$plot, "-", ARD_3_rich1$date)
+ArtR_days_since_lookup$plot_date <- paste(ArtR_days_since_lookup$plot, "-", ArtR_days_since_lookup$date)
+
+#2) delete date and plot cols from the lookup table
+
+ArtR_days_since_lookup <- ArtR_days_since_lookup %>% 
+  select( -date) %>% 
+  select(-plot)
+
+#3) join them by plot-date
+
+ARD_3_rich2 <- inner_join(ARD_3_rich1, ArtR_days_since_lookup)
+hist(ARD_3_rich2$rich) # well that's a poisson/neg binom <- consider making a cut off at 20 to reduce outliers
+range(ARD_3_rich2$rich) # 0-7
+
+# remember that day 4 was when that boat was driving over us all day --> exclude from analysis
+ARD_3_rich3 <- ARD_3_rich2 %>% 
+  filter(days_since_outplanting != 4)
+
+### USE THIS DF FROM NOW ON ###
+write.csv(ARD_3_rich3, "ARD_3_rich.csv")
+
+unique(ARD_3_rich3$plot)
+unique(ARD_3_rich3$days_since_outplanting)
+
+#quick visuals for fun
+
+ARD_3_rich_sum <- ARD_3_rich3 %>% 
+  na.omit() %>% 
+  group_by(treatment, complexity) %>% 
+  summarize(mean.rich = mean(rich))
+
+library(ggplot2)
+
+ggplot(data = ARD_3_rich_sum) +
+  geom_point(aes(x = treatment,
+                 y = mean.rich)) +
+  facet_grid(.~complexity)
+
 # data prep for analyses: -------------------------------------------------
 
 # 1a) calculate recruitment rate ####
@@ -618,3 +695,48 @@ ARD_4to6_relabun <- ARD_4to6_joined %>%
   mutate(rabun = abundance - c.abun.mean)
 
 write.csv(ARD_4to6_relabun, "ARD_4to6_relabun.csv") 
+
+
+# 4) calculate relative richness (0-3) ------------------------------------
+
+
+
+
+ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv")
+
+#1) 1 df with everything but control
+ARD_3_rich_no_control <- ARD_3_rich %>% 
+  filter(treatment != "control")
+
+#2) add col called days_comp
+ARD_3_rich_no_control$days_comp <- paste(ARD_3_rich_no_control$days_since_outplanting, "-", ARD_3_rich_no_control$complexity)
+
+#3) 1 df with just control
+ARD_3_rich_control <- ARD_3_rich %>% 
+  filter(treatment == "control")
+
+#4) add col days_comp
+ARD_3_rich_control$days_comp <- paste(ARD_3_rich_control$days_since_outplanting, "-", ARD_3_rich_control$complexity)
+
+#5) make a lookup that has just the mean rich for a certain day and complexity
+ARD_3_rich_control_lookup <- ARD_3_rich_control %>% 
+  group_by(days_comp) %>% 
+  summarize(c.rich.mean = mean(rich))
+
+#join the the lookup to the df with no control plots
+ARD_3_rich_joined <- full_join(ARD_3_rich_no_control, ARD_3_rich_control_lookup)
+
+# calculate relative rich (for a given day and complexitym that rich - the background rich for that day)
+ARD_3_relrich <- ARD_3_rich_joined %>% 
+  mutate(rrich = rich - c.rich.mean)
+
+write.csv(ARD_3_relrich, "ARD_3_relrich.csv") 
+
+hist(ARD_3_relrich$rrich)
+
+# background complexity (no added structure) ---------------------------------------------------
+
+
+# 1a) recruitment rate ----------------------------------------------------
+
+
