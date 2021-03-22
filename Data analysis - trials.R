@@ -604,6 +604,7 @@ ggplot() +
 
 
 
+
 # C. OVERALL DENSITY ------------------------------------------------------
 # option 1) t.test --------------------------------------------------------
 
@@ -963,7 +964,6 @@ summary(M3sc)
 
 # recruitment rate between H/L and structure N/Y is not significant when using gls with AR1 temporal regression structure
 
-
 # visualize: --------------------------------------------------------------
 
 # lmm
@@ -1018,8 +1018,279 @@ ggplot() +
 facet_grid(.~C)
 
 
+
 # B. FINAL DENSITY ---------------------------------------------------------------------
-# C. DIVERSITY METRICS ----------------------------------------------------
+
+
+ARD_4to6 <- read_csv("data/filter 0 values/ARD_4to6.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+ARD4sc <- ARD_4to6 %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  filter(visit %in% c("14", "15", "16"))
+
+hist(ARD4sc$density) #looks poisson/0 inflated? 
+describeBy(ARD4sc, group=list(ARD4sc$structure, ARD4sc$C))
+# low no structure: 1.54, sd =  1.74
+# low, yes structure : 2.97, sd=  3.47
+# high, no structure: 3.00 , sd  =3.62
+# high, yes structure:  3.10, sd =  3.58
+
+ggplot(data = ARD4sc)+
+  geom_boxplot(aes(x = structure, 
+                   y = density)) +
+  facet_grid(.~C)
+
+
+# option 1) glmm - poisson ------------------------------------------------
+
+
+
+glm.sc <- glm(density~structure*C, family = poisson(), data = ARD4sc)
+glmm.sc <- glmmTMB(density~structure*C + (1|plot), family = poisson(), data = ARD4sc)
+glmm.sc1 <- glmmTMB(density~structure*C + (1|visit), family = poisson(), data = ARD4sc)
+glmm.sc2 <- glmmTMB(density~structure*C + (1|visit) + (1|plot), family = poisson(), data = ARD4sc)
+
+AIC(glm.sc, glmm.sc, glmm.sc1,glmm.sc2) # glmm.sc1 and glmm.sc2 are best, but 1 is best, (visit as re)
+car::Anova(glmm.sc1)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+
+# Response: density
+# Chisq Df Pr(>Chisq)   
+# structure   6.0958  1    0.01355 * 
+#   C           2.8541  1    0.09114 . 
+# structure:C 8.3298  1    0.00390 **
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glmm.sc1)
+# overdispersed, p-value < 2.2e-16
+
+simoutglmm.sc1 <- simulateResiduals(fittedModel = glmm.sc1, plot = T)# doesn't look great...
+residuals(simoutglmm.sc1)
+plot(simoutglmm.sc1) # qq looks like the deviation from uniformity is significant :S
+
+# the first is a qq plot to detect deviation from expected distribution (deafault is KS test)
+# outliers are those outside the simulation envelope
+# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+
+plotResiduals(simoutglmm.sc1, ARD4f1$Tr)
+plotResiduals(simoutglmm.sc1, ARD4f1$C) #some hetero, but not as bad as lmsq
+hist(simoutglmm.sc1) # doesn't look the best? almost inverse normal dist...
+
+#goodness of fit tests
+testResiduals(simoutglmm.sc1)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # sig, p-value = 1.52e-10
+# 2) testOutliers: if there are more simulation outliers than expected        # sig outliers, p-value < 2.2e-16
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # sig, p-value < 2.2e-16
+testUniformity(simoutglmm.sc1) #KS test, p-value = 0.01076, so not uniform, but less worse lol
+
+
+# option 2) glmm with neg binom1 (quasi poisson) -------------------------------------------
+
+glm.scn <- glm.nb(density~structure*C, data = ARD4sc)
+glmm.scn <- glmmTMB(density~structure*C + (1|plot), family = nbinom1(), data = ARD4sc)
+glmm.sc1n <- glmmTMB(density~structure*C + (1|visit), family = nbinom1(), data = ARD4sc)
+glmm.sc2n <- glmmTMB(density~structure*C + (1|visit) + (1|plot), family = nbinom1(), data = ARD4sc)
+
+AIC(glm.scn, glmm.scn, glmm.sc1n,glmm.sc2n) # just the glm is best fitting
+car::Anova(glm.scn)
+
+# > car::Anova(glm.scn)
+# Analysis of Deviance Table (Type II tests)      #surprisded these aren't sig dif...
+# 
+# Response: density
+# LR Chisq Df Pr(>Chisq)
+# structure     2.4861  1     0.1149
+# C             1.0040  1     0.3163
+# structure:C   2.6191  1     0.1056
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glm.scn)
+# overdispersed, p-value < 2.2e-16
+
+simoutglm.scn <- simulateResiduals(fittedModel = glm.scn, plot = T)# this looks WAY better
+residuals(simoutglm.scn)
+plot(simoutglm.scn) 
+
+plotResiduals(simoutglm.scn, ARD4sc$structure)
+plotResiduals(simoutglm.scn, ARD4sc$C) 
+hist(simoutglm.scn) # looks better
+
+#goodness of fit tests
+testResiduals(simoutglm.scn)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.7078
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers, p-value = 0.76
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,p-value = 0.992
+
+# option 3) glmm - poisson +1 ---------------------------------------------
+
+ARD4sc1 <- ARD4sc %>% 
+  mutate(density1 = density + 1)
+hist(ARD4sc1$density1) # to make values positive 
+
+glm.sc. <- glm(density1~structure*C, family = poisson(), data = ARD4sc1)
+glmm.sc. <- glmmTMB(density1~structure*C + (1|plot), family = poisson(), data = ARD4sc1)
+glmm.sc1. <- glmmTMB(density1~structure*C + (1|visit), family = poisson(), data = ARD4sc1)
+glmm.sc2. <- glmmTMB(density1~structure*C + (1|visit) + (1|plot), family = poisson(), data = ARD4sc1)
+
+AIC(glm.sc., glmm.sc., glmm.sc1.,glmm.sc2.) # glmm.sc1.
+car::Anova(glmm.sc1.)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: density1
+# Chisq Df Pr(>Chisq)  
+# structure   5.0495  1    0.02463 *
+#   C           2.2227  1    0.13599  
+# structure:C 5.7119  1    0.01685 *
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glmm.sc1.)
+# overdispersed, p-value < 2.2e-16
+
+simoutglmm.sc1. <- simulateResiduals(fittedModel = glmm.sc1., plot = T)# doesn't look great...
+residuals(simoutglmm.sc1.)
+plot(simoutglmm.sc1.) # qq looks like the deviation from uniformity is significant :S
+
+# the first is a qq plot to detect deviation from expected distribution (deafault is KS test)
+# outliers are those outside the simulation envelope
+# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+
+plotResiduals(simoutglmm.sc1., ARD4sc1$structure)
+plotResiduals(simoutglmm.sc1., ARD4sc1$C) #some hetero, but not as bad as lmsq
+hist(simoutglmm.sc1.) # doesn't look the best still 
+
+#goodness of fit tests
+testResiduals(simoutglmm.sc1.)   ## these are displayed on the plots  # ALL still sig...
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # sig, p-value = 1.52e-10
+# 2) testOutliers: if there are more simulation outliers than expected        # sig outliers, p-value < 2.2e-16
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # sig, p-value < 2.2e-16
+
+
+# option 4) type II anova -------------------------------------------------
+
+ARD4sc <- ARD_4to6 %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  filter(visit %in% c("14", "15", "16"))
+
+lm1 <- lm(density~structure*C, data = ARD4sc)
+anova(lm1)
+summary(lm1)
+anova(lm1)
+
+plot(lm1, which = 2, add.smooth = FALSE) # oh that's REALLY BAD
+plot(lm1, which = 3, add.smooth = FALSE)
+
+
+# option 5) glmm with neg binom2 - use this ----------------------------------------------------
+
+glm.scn2 <- glm.nb(density~structure*C, data = ARD4sc)
+glmm.scn2 <- glmmTMB(density~structure*C + (1|plot), family = nbinom2(), data = ARD4sc)
+glmm.sc1n2 <- glmmTMB(density~structure*C + (1|visit), family = nbinom2(), data = ARD4sc)
+glmm.sc2n2 <- glmmTMB(density~structure*C + (1|visit) + (1|plot), family = nbinom2(), data = ARD4sc)
+
+AIC(glm.scn2, glmm.scn2, glmm.sc1n2,glmm.sc2n2) # glmm.sc1n2 (visit as re)
+car::Anova(glmm.sc1n2)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: density
+# Chisq Df Pr(>Chisq)
+# structure   2.6036  1     0.1066
+# C           1.1116  1     0.2917
+# structure:C 2.1284  1     0.1446
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glmm.sc1n2)
+# overdispersed, p-value < 2.2e-16
+
+simoutglm.scn2 <- simulateResiduals(fittedModel = glmm.sc1n2, plot = T)# this looks WAY better
+residuals(simoutglm.scn2)
+plot(simoutglm.scn2) 
+
+plotResiduals(simoutglm.scn2, ARD4sc$structure)
+plotResiduals(simoutglm.scn2, ARD4sc$C) 
+hist(simoutglm.scn2) # looks better
+
+#goodness of fit tests
+testResiduals(simoutglm.scn2)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.7078
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers, p-value = 0.76
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,p-value = 0.992
+
+# visualise ---------------------------------------------------------------
+
+#data
+ARD4sc_sum <- ARD4sc %>% 
+  group_by(structure, C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(288))
+
+ggplot() +
+  geom_col(data = ARD4sc_sum,
+           aes(x = structure,
+               y = dens.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data = ARD4sc_sum,
+                aes(x = structure,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("just data - final density 4-6") +
+  facet_grid(.~C)
+
+
+
+# C. OVERALL DENSITY ------------------------------------------------------
+ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+
+ARD3sc <- ARD_3 %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  mutate(density1 = sqrt(density)) %>% 
+  mutate(density2 = log(density)) %>% 
+  mutate(density3 = Math.cbrt(density))
+range(ARD3sc$density)
+hist(ARD3sc$density) #prob neg bin
+# option 1) glmm - poisson ------------------------------------------------
+
+
+
+
+
+
+
+# D. DIVERSITY METRICS ----------------------------------------------------
 
 
 
