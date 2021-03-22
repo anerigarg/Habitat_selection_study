@@ -4,14 +4,418 @@
 
 
 
+ _________________________________________________
 
 # A. RECRUITMENT RATE -----------------------------------------------------
 
 
+# option 1) t-test --------------------------------------------------------
+
+
+ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv", 
+                       col_types = cols(X1 = col_skip())) %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rate = as.numeric(rate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+
+#checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
+
+ARDrbc <- ARD_3_rate %>% 
+  filter(Tr == "control")
+
+#check normality: 
+hist(ARDrbc$rate) #normalish, a few v big or small responses, not surprising given variability in recruitment rate
+shapiro.test(ARDrbc$rate) # nope, p-value = 9.134e-14
+range(ARDrbc$rate) #-7.6 to 7
+
+# homogeneity of variance
+boxplot(rate~plot, data = ARDrbc) #hmm may have some spatial cor
+boxplot(rate~visit, data = ARDrbc) #not as extreme cheese wedge, but still there
+boxplot(rate~C, data = ARDrbc) # looks hetero
+leveneTest(ARDrbc$rate, ARDrbc$C) # nope, 0.00145 **
+
+describeBy(ARDrbc, group=ARDrbc$C) 
+
+
+# ok but assumptions matter more if you have unequal sample sizes (this one is equal)
+# Note that if you don’t specify equal variances, R does a Welch’s Two Sample t-test or what Zar
+# calls the Welch’s approximate t, or Behrens-Fisher test (Zar 5th ed. pp.138-142), with a
+# downwards adjusted degrees of freedom (i.e., more conservative). You could try running the
+# Welch’s test  to see the difference (although it’s hardly anything in this case) by setting
+# var.equal=FALSE, or by simply leaving the argument out of the command.
+
+ttest.rbc <- t.test(ARDrbc$rate ~ ARDrbc$C, var.equal=FALSE)
+ttest.rbc
+
+# You can visualize the test results using boxplots. Run the command:
+boxplot(ARDrbc$rate ~ ARDrbc$C, ylim=c(-10,10))
+
+# effect size
+# cohen's d for student t-test
+
+ttest.rbc %>% 
+  cohen.d(rate ~ C, var.equal = FALSE) # not working
+
+# mean rate for low was 0.08 (SD = 1.33), and mean rate for high was 0.04 (SD = 1.98).
+# A Welch's two-sample t-tes showed that the difference was not sig different (t = 0.20058, df = 208.23, p-value = 0.8412)
+
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+wilcox.test(ARDrbc$rate ~ ARDrbc$C)
+# W = 7563.5, p-value = 0.4969
+
+
+# visualize: --------------------------------------------------------------
+
+# data
+ARDrbc_sum <- ARDrbc %>% 
+  group_by(C) %>% 
+  summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
+  mutate(rate.se = rate.sd/sqrt(240))
+
+ggplot() +
+  geom_col(data = ARDrbc_sum,
+           aes(x = C,
+               y = rate.mean,
+               group = C,
+               fill = C),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDrbc_sum,
+                aes(x = C,
+                    ymin = rate.mean+rate.se,
+                    ymax = rate.mean-rate.se),
+                width = 0.3) +
+  ggtitle("just data")
+  # ylim(-0.4,0.7) +
+  # facet_grid(.~C) 
+
+
+# still figuring out how to extract predicted values from a t-test:
+# #ttest rate
+# predt <- ggpredict(ttest.rbc, terms = "C") %>% 
+#   rename(C = x)
+# pred <-ggpredict(ttest.rbc)
+# 
+# ARDr_sum <- ARDr %>% 
+#   group_by(Tr, C) %>% 
+#   summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+#   mutate(rrate.se = rrate.sd/sqrt(1280))
+# 
+# #same graph: ()
+# ggplot() +
+#   geom_col(data = ARDr_sum,
+#            aes(x = Tr,
+#                y = rrate.mean,
+#                group = Tr,
+#                fill = Tr),
+#            alpha = 0.35) +
+#   geom_col(data = predM1a,
+#            aes(x = Tr,
+#                y = predicted,
+#                group = Tr),
+#            colour = "black",
+#            fill = "transparent",
+#            size = 1.2) +
+#   geom_errorbar(data = predM1a,
+#                 aes(x = Tr,
+#                     ymin = predicted+std.error,
+#                     ymax = predicted-std.error),
+#                 width = 0.3) +
+#   ggtitle("predicted AR1 lmm (outline) over data (colour)") +
+#   # ylim(-0.4,0.7) +
+#   facet_grid(.~C) 
+
 
 
 # B. FINAL DENSITY ---------------------------------------------------------------------
-# C. DIVERSITY METRICS ----------------------------------------------------
+
+ARD_4to6 <- read_csv("data/filter 0 values/ARD_4to6.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+
+#checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
+
+ARD4bc <- ARD_4to6 %>% 
+  filter(Tr == "control") %>% 
+  filter(visit %in% c("14", "15", "16")) %>% 
+  mutate(density1 = sqrt(density)) %>% 
+  mutate(density2 = log(density)) %>% 
+  mutate(density3 = Math.cbrt(density))
+  
+
+#check normality: 
+hist(ARD4bc$density) #that's a poisson dist
+hist(ARD4bc$density1)
+hist(ARD4bc$density2)
+hist(ARD4bc$density3) #they all kind of suck, maybe a non-parametric test right away?
+
+shapiro.test(ARD4bc$density) # nope, p-value = 8.086e-08
+range(ARD4bc$density) #0 to 13
+
+# homogeneity of variance
+boxplot(density~plot, data = ARD4bc) #quite a bit of variation
+boxplot(density~visit, data = ARD4bc) 
+boxplot(density~C, data = ARD4bc) # looks hetero
+leveneTest(ARD4bc$density, ARD4bc$C) #homogeneous, 0.0525
+
+describeBy(ARD4bc, group=ARD4bc$C) 
+# mean final densit for Low is 1.54 (SD = 1.74) and mean final density for High is   3.00 (SD = 3.62)
+# Low median is 1, H median is 
+
+# option 1) t.test --------------------------------------------------------
+
+
+# ok but assumptions matter more if you have unequal sample sizes (this one is equal)
+# Note that if you don’t specify equal variances, R does a Welch’s Two Sample t-test or what Zar
+# calls the Welch’s approximate t, or Behrens-Fisher test (Zar 5th ed. pp.138-142), with a
+# downwards adjusted degrees of freedom (i.e., more conservative). You could try running the
+# Welch’s test  to see the difference (although it’s hardly anything in this case) by setting
+# var.equal=FALSE, or by simply leaving the argument out of the command.
+
+ttest.4bc <- t.test(ARD4bc$density ~ ARD4bc$C, var.equal=TRUE)
+ttest.4bc
+ttest.4bc1 <- t.test(ARD4bc$density ~ ARD4bc$C, var.equal=FALSE) #same output
+ttest.4bc1
+
+# not significant (t = -1.7766, df = 46, p-value = 0.08225)
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+wilcox.test(ARD4bc$density ~ ARD4bc$C)
+# not significant  (W = 228, p-value = 0.2094)
+# I'm surprised these aren't sig different considering mean and sd
+
+
+#  option 3) glmm ---------------------------------------------------------
+
+glmm4bc <- glmmTMB(density~C, data = ARD4bc)
+glmm4bc1 <- glmmTMB(density~C + (1|plot), data = ARD4bc)
+glmm4bc2 <- glmmTMB(density~C + (1|visit), data = ARD4bc)
+glmm4bc3 <- glmmTMB(density~C + (1|visit) + (1|plot), data = ARD4bc)
+
+AIC(glmm4bc, glmm4bc1, glmm4bc2, glmm4bc3) #the lm was the best, so could do a glm?
+
+glm4bc <- glm(density~C, data = ARD4bc) #same as above
+
+# except for these need numerical var (0 or 1)
+
+ARD4bc1 <- ARD4bc %>% 
+  mutate(Cnum = ifelse(C == "High", 1,0))
+
+glmm4bc <- glmmTMB(density~C, data = ARD4bc1)
+glmm4bc1 <- glmmTMB(density~C + (1|plot), data = ARD4bc1)
+glmm4bc2 <- glmmTMB(density~C + (1|visit), data = ARD4bc1)
+glmm4bc3 <- glmmTMB(density~C + (1|visit) + (1|plot), data = ARD4bc1)
+
+AIC(glmm4bc, glmm4bc1, glmm4bc2, glmm4bc3) #the glm is the best
+
+# I feel like this is dumb....gonna just move on
+
+
+# visualize:  -------------------------------------------------------------
+
+# data
+ARD4bc_sum <- ARD4bc %>% 
+  group_by(C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(48))
+
+ggplot() +
+  geom_col(data = ARD4bc_sum,
+           aes(x = C,
+               y = dens.mean,
+               group = C,
+               fill = C),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD4bc_sum,
+                aes(x = C,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("just data - final density 4-6")
+
+
+
+# C. OVERALL DENSITY ------------------------------------------------------
+
+
+ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+
+#checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
+
+ARD3bc <- ARD_3 %>% 
+  filter(Tr == "control") %>% 
+  mutate(density1 = sqrt(density)) %>% 
+  mutate(density2 = log(density)) %>% 
+  mutate(density3 = Math.cbrt(density))
+
+
+#check normality: 
+hist(ARD3bc$density) #that's a neg binom
+hist(ARD3bc$density1)
+hist(ARD3bc$density2) 
+hist(ARD3bc$density3) #they all kind of suck, maybe a non-parametric test right away?
+
+shapiro.test(ARD3bc$density) # nope, p-value = 8.086e-08
+shapiro.test(ARD3bc$density3)
+range(ARD4bc$density) #0 to 13
+
+# homogeneity of variance
+boxplot(density~plot, data = ARD3bc) #quite a bit of variation bw HS and HN
+boxplot(density~visit, data = ARD3bc) 
+boxplot(density~C, data = ARD3bc) # looks hetero
+leveneTest(ARD3bc$density, ARD3bc$C) #hetero, 0.0006589 ***
+
+describeBy(ARD3bc, group=ARD3bc$C) 
+# mean density for Low is  1.48 (SD = 2.14) and mean density for High is 2.76 (SD = 3.42)
+# Low median is 1, H median is 2
+
+# option 1) t.test --------------------------------------------------------
+
+
+# ok but assumptions matter more if you have unequal sample sizes (this one is equal)
+# Note that if you don’t specify equal variances, R does a Welch’s Two Sample t-test or what Zar
+# calls the Welch’s approximate t, or Behrens-Fisher test (Zar 5th ed. pp.138-142), with a
+# downwards adjusted degrees of freedom (i.e., more conservative). You could try running the
+# Welch’s test  to see the difference (although it’s hardly anything in this case) by setting
+# var.equal=FALSE, or by simply leaving the argument out of the command.
+
+# ttest.4bc <- t.test(ARD4bc$density ~ ARD4bc$C, var.equal=TRUE)
+# ttest.4bc
+ttest.3bc1 <- t.test(ARD3bc$density ~ ARD3bc$C, var.equal=FALSE) #same output
+ttest.3bc1
+
+# significant (t = -3.5674, df = 213.4, p-value = 0.0004452)
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+w3bc <- wilcox.test(ARD3bc$density ~ ARD3bc$C)
+# overall recruit density is significantly different between High and Low complexity  (W = 6214, p-value = 0.0006028)
+w3bc
+
+# visualise:  -------------------------------------------------------------
+
+#data
+
+ARD3bc_sum <- ARD3bc %>% 
+  group_by(C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(256))
+
+ggplot() +
+  geom_col(data = ARD3bc_sum,
+           aes(x = C,
+               y = dens.mean,
+               group = C,
+               fill = C),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3bc_sum,
+                aes(x = C,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("just data - overall density (0-3")
+
+
+# D. DIVERSITY METRICS ----------------------------------------------------
+
+ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+#checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
+
+ARD3bcr <- ARD_3_rich %>% 
+  filter(Tr == "control") %>% 
+  mutate(rich1 = sqrt(rich)) %>% 
+  mutate(rich2 = log(rich)) %>% 
+  mutate(rich3 = Math.cbrt(rich))
+
+
+#check normality: 
+hist(ARD3bcr$rich) #that's poisson-y
+hist(ARD3bcr$rich1) #nope
+hist(ARD3bcr$rich2)  #meh
+hist(ARD3bcr$rich3) #they all kind of suck, maybe a non-parametric test right away?
+
+shapiro.test(ARD3bcr$rich) # nope,p-value = 1.137e-15
+range(ARD3bcr$rich) #0 to 4
+
+# homogeneity of variance
+boxplot(rich~plot, data = ARD3bcr) #quite a bit of variation bw HS and HN
+boxplot(rich~visit, data = ARD3bcr) 
+boxplot(rich~C, data = ARD3bcr) # looks homo and very similar lol
+leveneTest(ARD3bcr$rich, ARD3bcr$C) #homo, 0.1422
+
+describeBy(ARD3bcr, group=ARD3bcr$C) 
+# mean density for Low is  0.92  (SD = ) 0.90) and mean density for High is 0.98 (SD = 0.81)
+# Low median is 1, H median is 1
+
+# option 1) t.test --------------------------------------------------------
+
+ttest.3bcr <- t.test(ARD3bcr$rich ~ ARD3bcr$C, var.equal=TRUE)
+ttest.3bcr
+
+
+# non significant (t = -0.58244, df = 254, p-value = 0.5608)
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+w3bcr <- wilcox.test(ARD3bcr$rich ~ ARD3bcr$C)
+# species richness is not significantly different between High and Low complexity  (W = 7707.5, p-value = 0.3821)
+w3bcr
+
+# visualise:  -------------------------------------------------------------
+
+#data
+
+ARD3bcr_sum <- ARD3bcr %>% 
+  group_by(C) %>% 
+  summarize(rich.mean = mean(rich), rich.sd = sd(rich)) %>%
+  mutate(rich.se = rich.sd/sqrt(256))
+
+ggplot() +
+  geom_col(data = ARD3bcr_sum,
+           aes(x = C,
+               y = rich.mean,
+               group = C,
+               fill = C),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3bcr_sum,
+                aes(x = C,
+                    ymin = rich.mean+rich.se,
+                    ymax = rich.mean-rich.se),
+                width = 0.3) +
+  ggtitle("just data - overall rich (0-3")
+
 
 
 # 2) STRUCTURE VS NO STRUCTURE --------------------------------------------
@@ -32,13 +436,16 @@ options(contrasts=c("contr.sum","contr.poly"))
 # This isn’t much of a concern when data are balanced (i.e., equal sample sizes among groups or
 # subgroups) because Type I, Type II, and Type III SSs are all equal under those conditions.
 # However, they can differ widely when analyzing unbalanced data, so it is a good practice to
-# use the options command above whenever you are doing ANOVA analyses in R
+# use the options command above whenever you are doing ANOVA analyses in R _______________________________________________
+
 # A. RECRUITMENT RATE -----------------------------------------------------
 # B. FINAL DENSITY ---------------------------------------------------------------------
 # C. DIVERSITY METRICS ----------------------------------------------------
 
 
+
 # 3) COMPOSITION ----------------------------------------------------------
+ ______________________________________________________________
 
 # A. RELATIVE RECRUITMENT RATE -----------------------------------------------------
 
@@ -47,7 +454,7 @@ options(contrasts=c("contr.sum","contr.poly"))
 # test modelling 1:  ----------------------------------------------------------
 
 
-# lm ----------------------------------------------------------------------
+# lm 
 
 #following code from Andy Field textbook ch 12, factorial anova
 
@@ -243,1097 +650,27 @@ bartlett.test(E, ARD_3_rate_effect$complexity)
 # 4) could consider doing a mixed effects model with observer and plot as random effects? take into account spatial structure 
 
 
-# lm but drop first visit -------------------------------------------------
-
-# try dropping day 1 (where rate is 0 anyways) to reduce variation
-
-ARD_3_rate_effect <- read_csv("data/standardize to control calculations/ARD_3_rate_effect.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect_1 <- ARD_3_rate_effect %>% 
-  filter(days_since_outplanting != 1)
-
-hist(ARD_3_rate_effect_1$effect.size)
-ggplot(data = ARD_3_rate_effect_1) +
-  geom_boxplot(aes(x = treatment,
-                   y = effect.size)) +
-  # facet_grid(treatment~complexity) +
-  facet_grid(complexity~treatment)
-  # ylim(-0.5,0.5)
-#looks normalish...
-
-shapiro.test(ARD_3_rate_effect_1$effect.size) #not normal
-# data:  ARD_3_rate_effect_1$effect.size
-# W = 0.95147, p-value = 4.344e-05 
-
-leveneTest(ARD_3_rate_effect_1$effect.size, interaction(ARD_3_rate_effect_1$treatment,
-                                                      ARD_3_rate_effect_1$complexity)) #interaction, variance is homogenous
-# Levene's Test for Homogeneity of Variance (center = median)
-#        Df F value Pr(>F)
-# group   9  1.1607 0.3249
-#       140    
-
-by(ARD_3_rate_effect_1$effect.size, list(ARD_3_rate_effect_1$treatment,
-                                       ARD_3_rate_effect_1$complexity), stat.desc)
-
-contrasts(ARD_3_rate_effect_1$complexity)<-c(-1, 1)
-ARD_3_rate_effect_1$complexity #at the bottom it shows -1 for low and 1 for high
-
-composition.rate.lm_1 <- aov(effect.size ~ treatment + complexity + treatment*complexity, data = ARD_3_rate_effect_1)
-Anova(composition.rate.lm_1, type = "III")
-
-summary.lm(composition.rate.lm_1)
-
-plot(composition.rate.lm_1)
-
-#also non-singificant
-
-
-
-
-
-
-# lm but only first half of visits ---------------------------
-
-# thinking ecologically you may actually see rate look different in first month or even shorter
-# visually it looks pretty similar to all visits pooled, let's see statistically (both in ARD data prep for analysis and visualization)
-
-
-  ARD_3_rate_effect <- read_csv("data/standardize to control calculations/ARD_3_rate_effect.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect_2 <- ARD_3_rate_effect %>% 
-  filter(days_since_outplanting %in% c(1, 2, 3, 5, 7, 9, 11, 13, 18, 23, 26, 30, 33))
-
-hist(ARD_3_rate_effect_2$effect.size)
-ggplot(data = ARD_3_rate_effect_2) +
-  geom_boxplot(aes(x = treatment,
-                   y = effect.size)) +
-  # facet_grid(treatment~complexity) +
-  facet_grid(complexity~treatment)
-# ylim(-0.5,0.5)
-#looks normalish...
-
-shapiro.test(ARD_3_rate_effect_2$effect.size) #not normal
-# data:  ARD_3_rate_effect_2$effect.size
-# W = 0.94937, p-value = 0.0001014
-
-leveneTest(ARD_3_rate_effect_2$effect.size, interaction(ARD_3_rate_effect_2$treatment,
-                                                        ARD_3_rate_effect_2$complexity)) #interaction, variance is homogenous
-# Levene's Test for Homogeneity of Variance (center = median)
-#        Df F value Pr(>F)
-# group   9  1.0652 0.3935
-#       120     
-
-by(ARD_3_rate_effect_2$effect.size, list(ARD_3_rate_effect_2$treatment,
-                                         ARD_3_rate_effect_2$complexity), stat.desc)
-
-contrasts(ARD_3_rate_effect_2$complexity)<-c(-1, 1)
-ARD_3_rate_effect_2$complexity #at the bottom it shows -1 for low and 1 for high
-
-composition.rate.lm_2 <- aov(effect.size ~ treatment + complexity + treatment*complexity, data = ARD_3_rate_effect_2)
-Anova(composition.rate.lm_2, type = "III")
-
-summary.lm(composition.rate.lm_2)
-
-# Call:
-#   aov(formula = effect.size ~ treatment + complexity + treatment * 
-#         complexity, data = ARD_3_rate_effect_2)
-# 
-# Residuals:
-#   Min       1Q   Median       3Q      Max 
-# -2.22404 -0.36214  0.00112  0.37853  2.58478 
-# 
-# Coefficients:
-#   Estimate Std. Error t value Pr(>|t|)
-# (Intercept)              -0.032212   0.138094  -0.233    0.816
-# treatment0.3              0.070673   0.195294   0.362    0.718
-# treatment0.5              0.142228   0.195294   0.728    0.468
-# treatment0.7              0.017067   0.195294   0.087    0.931
-# treatment1.0              0.070673   0.195294   0.362    0.718
-# complexity1               0.034455   0.138094   0.250    0.803
-# treatment0.3:complexity1  0.005128   0.195294   0.026    0.979
-# treatment0.5:complexity1  0.020753   0.195294   0.106    0.916
-# treatment0.7:complexity1 -0.045272   0.195294  -0.232    0.817
-# treatment1.0:complexity1 -0.036699   0.195294  -0.188    0.851
-# 
-# Residual standard error: 0.7041 on 120 degrees of freedom
-# Multiple R-squared:  0.007958,	Adjusted R-squared:  -0.06645 
-# F-statistic: 0.107 on 9 and 120 DF,  p-value: 0.9995
-
-plot(composition.rate.lm_2)
-
-#non-signiificant, also v v low adjusted R-square 
-
-#what if I use lm syntax? should be the same right?
-
-composition.rate.lm_3 <- lm(effect.size ~ treatment + complexity + treatment*complexity, data = ARD_3_rate_effect_2)
-summary.lm(composition.rate.lm_3)
-
-# Call:
-#   lm(formula = effect.size ~ treatment + complexity + treatment * 
-#        complexity, data = ARD_3_rate_effect_2)
-# 
-# Residuals:
-#   Min       1Q   Median       3Q      Max 
-# -2.22404 -0.36214  0.00112  0.37853  2.58478 
-# 
-# Coefficients:
-#   Estimate Std. Error t value Pr(>|t|)
-# (Intercept)              -0.032212   0.138094  -0.233    0.816
-# treatment0.3              0.070673   0.195294   0.362    0.718
-# treatment0.5              0.142228   0.195294   0.728    0.468
-# treatment0.7              0.017067   0.195294   0.087    0.931
-# treatment1.0              0.070673   0.195294   0.362    0.718
-# complexity1               0.034455   0.138094   0.250    0.803
-# treatment0.3:complexity1  0.005128   0.195294   0.026    0.979
-# treatment0.5:complexity1  0.020753   0.195294   0.106    0.916
-# treatment0.7:complexity1 -0.045272   0.195294  -0.232    0.817
-# treatment1.0:complexity1 -0.036699   0.195294  -0.188    0.851
-# 
-# Residual standard error: 0.7041 on 120 degrees of freedom
-# Multiple R-squared:  0.007958,	Adjusted R-squared:  -0.06645 
-# F-statistic: 0.107 on 9 and 120 DF,  p-value: 0.9995
-
-#also non-singificant, also adjusted R squared is pretty darn low
-
-
-
+# lm but drop first visit
+# lm but only first half of visits
 # test modelling 2: -------------------------------------------------------
-# lmm1 - plot and days separate, treatment "standardized", , with outlier --------------------------------------------------------------------
-
-AIC(lmm2,lmm1) #YES - try using this at the end for model selection?
-bbmle::AICtab(lmm1,lmm2) # look into this i think it scales and compaes aic? 
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-# perhaps there's some random variation involved and lm is not the best choice
-# also, are the observations truly independent? no, the answer is no, so lm is not a good choice
-# do model selection *by AIC and REML values(?) for allowing slopws and intercepts to vary, and also fixing intercept
-# also include 1|plot) as random and then (1|days_since_outplanting)
-
-# let's follow the tutorial from here: https://ourcodingclub.github.io/tutorials/mixed-models/
-
-hist(ARD_3_rate_effect1$effect.size) #looks normalish, according to Harrison (forget year) lmms can handle a degree of non-normality
-#looks like there's an outlier way out above 15
-
-range(ARD_3_rate_effect1$effect.size) #16.25 on plot grid HS_8 day 3, keep for now let's see later if you want to remove...
-
-# recommends standardising explanatory vars (predictors) so they have a mean of 0 and sd of 1. ensures that estimated coefficiants are all on the same scale.
-# i think i can only do that with numeric values, so change to numeric 
-
-ARD_3_rate_effect2 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-# ok then they go over doing a regular lm, i already did that and know it doesn't work so gonna skip to lmm part
-
-library(lme4)
-# install.packages("lmerTest")
-library(lmerTest)
-# install.packages("bbmle")
-library(bbmle)
-
-lmm1 <- lmer(effect.size ~ treatment2 + complexity + treatment2*complexity + (1|plot) + (1|days_since_outplanting), data = ARD_3_rate_effect2)
-summary(lmm1)
-car::Anova(lmm1, test.statistic = c("F")) 
-anova(lmm1) #more informative,  just use this one
-AIC(lmm1)
-plot(lmm1) 
-qqnorm(resid(lmm1)) 
-qqline(resid(lmm1))
-
-# Linear mixed model fit by REML ['lmerMod']
-# Formula: effect.size ~ treatment2 + complexity + treatment2 * complexity +      (1 | plot) + (1 | days_since_outplanting)
-# Data: ARD_3_rate_effect2
-# 
-# REML criterion at convergence: 4911.2
-# 
-# Scaled residuals: 
-#   Min      1Q  Median      3Q     Max 
-# -5.6641 -0.3242 -0.0084  0.3131  9.8845 
-# 
-# Random effects:
-#   Groups                 Name        Variance Std.Dev.
-# days_since_outplanting (Intercept) 0.0765   0.2766              ### ok so plot doesn't seem to account for any of the variance
-# plot                   (Intercept) 0.0000   0.0000                  but days.. does. 0.0765/2.6557 = 0.28, so 28% of variance from time
-# Residual                           2.6557   1.6296                  as random var ###
-# Number of obs: 1280, groups:  days_since_outplanting, 16; plot, 4      
-# 
-# Fixed effects:
-#   Estimate Std. Error t value
-# (Intercept)               -0.0005208  0.0945031  -0.006
-# treatment2                 0.0333428  0.0644423   0.517
-# complexityHigh             0.0288542  0.0910996   0.317
-# treatment2:complexityHigh -0.0317954  0.0911352  -0.349
-# 
-# Correlation of Fixed Effects:
-#   (Intr) trtmn2 cmplxH
-# treatment2   0.000              
-# complxtyHgh -0.482  0.000       
-# trtmnt2:cmH  0.000 -0.707  0.000
-# optimizer (nloptwrap) convergence code: 0 (OK)                ### I think the isSingular means that the variance of one or more linear combinations         
-# boundary (singular) fit: see ?isSingular                          of the effects are close to 0. sign of mis-convergence or overfitting
-                                                                ### apparently this also can show up when there are fewer than 5 levels for a random effect
-
-
-
-
-# lmm2 - like lmm1, but no scaling treatment --------------------------------------------------------------------
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect3 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-# ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-# library(lme4)
-
-lmm2 <- lmer(effect.size ~ treatment1 + complexity + treatment1*complexity + (1|plot) + (1|days_since_outplanting), data = ARD_3_rate_effect3)
-summary(lmm2)
-
-anova(lmm2)
-AIC(lmm2)
-plot(lmm2) 
-qqnorm(resid(lmm2)) 
-qqline(resid(lmm2))
-
-# Linear mixed model fit by REML ['lmerMod']
-# Formula: effect.size ~ treatment1 + complexity + treatment1 * complexity +      (1 | plot) + (1 | days_since_outplanting)
-# Data: ARD_3_rate_effect3
-# 
-# REML criterion at convergence: 4912.6
-# 
-# Scaled residuals: 
-#   Min      1Q  Median      3Q     Max 
-# -5.6641 -0.3242 -0.0084  0.3131  9.8845 
-# 
-# Random effects:
-#   Groups                 Name        Variance Std.Dev.
-# days_since_outplanting (Intercept) 0.0765   0.2766               ### variance of random effects the same ###     
-# plot                   (Intercept) 0.0000   0.0000  
-# Residual                           2.6557   1.6296  
-# Number of obs: 1280, groups:  days_since_outplanting, 16; plot, 4
-# 
-# Fixed effects:
-#   Estimate Std. Error t value
-# (Intercept)               -0.07122    0.16614  -0.429           
-# treatment1                 0.02357    0.04555   0.517
-# complexityHigh             0.09628    0.21365   0.451
-# treatment1:complexityHigh -0.02247    0.06442  -0.349
-
-# Lmm1: Fixed effects:
-#   Estimate Std. Error t value
-# (Intercept)               -0.0005208  0.0945031  -0.006
-# treatment2                 0.0333428  0.0644423   0.517
-# complexityHigh             0.0288542  0.0910996   0.317
-# treatment2:complexityHigh -0.0317954  0.0911352  -0.349
-# 
-# Correlation of Fixed Effects:
-#   (Intr) trtmn1 cmplxH
-# treatment1  -0.822              
-# complxtyHgh -0.643  0.640       
-# trtmnt1:cmH  0.582 -0.707 -0.905
-# optimizer (nloptwrap) convergence code: 0 (OK)
-# boundary (singular) fit: see ?isSingular           ### this seems to be because one of my random effects has no contribution to var (plot), try without         
-
-
-# lmm3 - treat scaled, just days as random-----------------------------------
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect2 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-# ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-# library(lme4)
-
-lmm3 <- lmer(effect.size ~ treatment2 + complexity + treatment2*complexity + (1|days_since_outplanting), data = ARD_3_rate_effect2)
-summary(lmm3)
-
-anova(lmm3)
-AIC(lmm3)
-plot(lmm3) 
-qqnorm(resid(lmm3)) 
-qqline(resid(lmm3))
-
-# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
-# Formula: effect.size ~ treatment2 + complexity + treatment2 * complexity +      (1 | days_since_outplanting)
-#    Data: ARD_3_rate_effect2
-# 
-# REML criterion at convergence: 4911.2
-# 
-# Scaled residuals: 
-#     Min      1Q  Median      3Q     Max 
-# -5.6641 -0.3242 -0.0084  0.3131  9.8845 
-# 
-# Random effects:
-#  Groups                 Name        Variance Std.Dev.
-#  days_since_outplanting (Intercept) 0.0765   0.2766           ### still the same out of var explained by days as random ###
-#  Residual                           2.6557   1.6296  
-# Number of obs: 1280, groups:  days_since_outplanting, 16
-# 
-# Fixed effects:
-#                             Estimate Std. Error         df t value Pr(>|t|)
-# (Intercept)               -5.208e-04  9.450e-02  2.542e+01  -0.006    0.996
-# treatment2                 3.334e-02  6.444e-02  1.261e+03   0.517    0.605
-# complexityHigh             2.885e-02  9.110e-02  1.261e+03   0.317    0.751
-# treatment2:complexityHigh -3.180e-02  9.114e-02  1.261e+03  -0.349    0.727
-# 
-# Correlation of Fixed Effects:
-#             (Intr) trtmn2 cmplxH
-# treatment2   0.000              
-# complxtyHgh -0.482  0.000       
-# trtmnt2:cmH  0.000 -0.707  0.000                            ## no longer getting issingular? error, prob cause plot wasn't doing anything ###
-
-
-
-
-
-
-# lmm4 - treat scaled, just plot, no outlier  -----------------------------------
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect2 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-
-ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-lmm4 <- lmer(effect.size ~ treatment2 + complexity + treatment2*complexity + (1|plot), data = ARD_3_rate_effect2)
-summary(lmm4)
-
-# car::Anova(lmm4, test.statistic = c("F")) #YES
-anova(lmm4)
-AIC(lmm4)
-plot(lmm4) 
-qqnorm(resid(lmm4)) 
-qqline(resid(lmm4))
-
-install.packages("ggeffects")
-library(ggeffects)
-ggpredict(lmm4, terms = c("treatment2", "complexity", "plot"), type = "re") %>% 
-  plot() +
-  labs(x = "treatment", y = "Relative Recruitment Rate",
-       title = "M5, treatment on recruitment rate") +
-  theme_classic()
-
-# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
-# Formula: effect.size ~ treatment2 + complexity + treatment2 * complexity +      (1 | plot)
-#    Data: ARD_3_rate_effect2
-# 
-# REML criterion at convergence: 4927.4
-# 
-# Scaled residuals: 
-#     Min      1Q  Median      3Q     Max 
-# -5.6476 -0.3638 -0.0168  0.3601  9.8213 
-# 
-# Random effects:
-#  Groups   Name        Variance Std.Dev.
-#  plot     (Intercept) 0.000    0.000   
-#  Residual             2.728    1.652                    ### no var explained by plot ###
-# Number of obs: 1280, groups:  plot, 4
-# 
-# Fixed effects:
-#                             Estimate Std. Error         df t value Pr(>|t|)
-# (Intercept)               -5.208e-04  6.528e-02  1.276e+03  -0.008    0.994
-# treatment2                 3.334e-02  6.531e-02  1.276e+03   0.511    0.610
-# complexityHigh             2.885e-02  9.233e-02  1.276e+03   0.313    0.755
-# treatment2:complexityHigh -3.180e-02  9.236e-02  1.276e+03  -0.344    0.731
-# 
-# Correlation of Fixed Effects:
-#             (Intr) trtmn2 cmplxH
-# treatment2   0.000              
-# complxtyHgh -0.707  0.000       
-# trtmnt2:cmH  0.000 -0.707  0.000
-# optimizer (nloptwrap) convergence code: 0 (OK)
-# boundary (singular) fit: see ?isSingular              ### getting is singular error again ###
-
-
-# lmm5 - treat scaled, just days, no outlier ------------------------------
-
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect2 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-#could be outlier
-#check fish density for HS_8 day 2 and 3
-
-ARD_check <- ARD_3_rate_effect2 %>% 
-  filter((days_since_outplanting == 3) & (plot_grid == "HS - 8"))
-
-# ya this is way higher than everything else, I checked the data and it looks like there's just a day it went from low to high v quickly
-# could try exlcluding? doesn't reflect any of the other H clusters on any day, next highest was 9 so it's almost double that
-
-# filter out the outlier point grid HS-8 on day 3  ## remmeber ARD_3_rate_effect3 was with treatment not standardized
-ARD_3_rate_effect4 <- ARD_3_rate_effect2 %>% 
-  filter(visit != "HS - 8 - 3")
-
-hist(ARD_3_rate_effect4$effect.size) #looks much better but let's see
-
-lmm5 <- lmer(effect.size ~ treatment2 + complexity + treatment2*complexity + (1|days_since_outplanting), data = ARD_3_rate_effect4)
-summary(lmm5)
-
-lmm5.1 <- lmer(effect.size ~ treatment2*complexity + (1|days_since_outplanting), data = ARD_3_rate_effect4)
-summary(lmm5.1)
-
-anova(lmm5)
-AIC(lmm5)
-plot(lmm5) 
-qqnorm(resid(lmm5)) 
-qqline(resid(lmm5))         
-
-isSingular(lmm5) # good, get FALSE as output
-
-install.packages("ggeffects")
-library(ggeffects)
-ggpredict(lmm5, terms = c("treatment2", "complexity"), type = "fe") %>% 
-  plot() +
-  labs(x = "treatment", y = "Relative Recruitment Rate",
-       title = "M5, treatment on recruitment rate") +
-  theme_classic()
-
-ggpredict(M4.p, terms = c("height_diff_sc", "site"), type = "re") %>%  # M4.p is my fit GLMM; 'terms' are my fixed effect and randoms
-  plot() +
-  labs(x = "Relief", y = "Abundance", title = "Effect of relief on abundance") + 
-  theme_minimal()
-
-# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
-# Formula: effect.size ~ treatment2 + complexity + treatment2 * complexity +      (1 | days_since_outplanting)
-#    Data: ARD_3_rate_effect4
-# 
-# REML criterion at convergence: 4805.6
-# 
-# Scaled residuals: 
-#     Min      1Q  Median      3Q     Max 
-# -5.9010 -0.3376 -0.0013  0.3266  5.9211 
-# 
-# Random effects:
-#  Groups                 Name        Variance Std.Dev.
-#  days_since_outplanting (Intercept) 0.07731  0.278   
-#  Residual                           2.45022  1.565   
-# Number of obs: 1279, groups:  days_since_outplanting, 16
-# 
-# Fixed effects:
-#                             Estimate Std. Error         df t value Pr(>|t|)
-# (Intercept)               -5.208e-04  9.306e-02  2.470e+01  -0.006    0.996
-# treatment2                 3.334e-02  6.190e-02  1.260e+03   0.539    0.590
-# complexityHigh             3.417e-03  8.754e-02  1.260e+03   0.039    0.969
-# treatment2:complexityHigh -4.979e-0                                                                           2  8.756e-02  1.260e+03  -0.569    0.570
-# 
-# Correlation of Fixed Effects:
-#             (Intr) trtmn2 cmplxH
-# treatment2   0.000              
-# complxtyHgh -0.470  0.000       
-# trtmnt2:cmH  0.000 -0.707  0.001
-
-
-### OK STOP AND THINK FOR A SEC ###
-
-
-### should I nest plot in complexity --> (complexity|plot) (maybe not since that's a fixed effect? )
-### OR --> maybe I should nest plot_grid in plot --> (plot|plot_grid) is a triple layer nesting cray?
-### also --> maybe I should nest survey in surveyor --> (1|surveyor/survey)
-### also --> I should prob include genotype as a fixed effect (perhaps take out in M selection process?)
-### also --> could treat days as a categorical variable (I think Emma suggested a continuous) --> see the paper by albins 
-# "I used Time as a categorical rather than continuous predictor because there was no a priori reason to assume linear relationships between response
-# variables and time." (Albins 2015) 
-## OR keep it as a random effect since I'm not actually "interested" in time
-
-### should I keep using the outlier out df?
-### should I keep using the treatment standardized df?
-
-### should I check for autocorrelation, (nlme::gls() then justify continuing with nlme after?)
-
-
-
-### having thought about it im going to:
-# 1) try with plot_grid nested in plot
-# 2) include genotype as a fixed effect? #don't have this in my df... already accounted for this by randomly distributing among my treatments 
-# 3) include survey nested in surveyor? # don't have this in my df either... # I alread dealy with this by randomizng sampling surveys and standardizing training. 
-
-## am going to keep using the outlier out and treatment standardized df (ARD_3_effect4) to test plot_grid nested in plot. 
-
-
-# lmm6 - days and plot_grid nested in plot--------------------------------------------------------------------
-
-# try adding plot_grid nested in plot
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect2 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-#could be outlier
-#check fish density for HS_8 day 2 and 3
-
-ARD_check <- ARD_3_rate_effect2 %>% 
-  filter((days_since_outplanting == 3) & (plot_grid == "HS - 8"))
-
-# ya this is way higher than everything else, I checked the data and it looks like there's just a day it went from low to high v quickly
-# could try exlcluding? doesn't reflect any of the other H clusters on any day, next highest was 9 so it's almost double that
-
-# filter out the outlier point grid HS-8 on day 3  ## remmeber ARD_3_rate_effect3 was with treatment not standardized
-ARD_3_rate_effect4 <- ARD_3_rate_effect2 %>% 
-  filter(visit != "HS - 8 - 3")
-
-hist(ARD_3_rate_effect4$effect.size) #looks much better but let's see
-
-lmm6 <- lmer(effect.size ~ treatment2 + complexity + treatment2*complexity + (1|days_since_outplanting) + (plot|plot_grid), data = ARD_3_rate_effect4)
-summary(lmm6)
-
-anova(lmm6)
-AIC(lmm6)
-plot(lmm6) 
-qqnorm(resid(lmm6)) 
-qqline(resid(lmm6))
-
-isSingular(lmm6) #uh oh gettingt he isSingular error... and test came as true
-
-# Linear mixed model fit by REML. t-tests use Satterthwaite's method ['lmerModLmerTest']
-# Formula: effect.size ~ treatment2 + complexity + treatment2 * complexity +      (1 | days_since_outplanting)
-#    Data: ARD_3_rate_effect4
-# 
-# REML criterion at convergence: 4805.6
-# 
-# Scaled residuals: 
-#     Min      1Q  Median      3Q     Max 
-# -5.9010 -0.3376 -0.0013  0.3266  5.9211 
-# 
-# Random effects:
-#  Groups                 Name        Variance Std.Dev.
-#  days_since_outplanting (Intercept) 0.07731  0.278   
-#  Residual                           2.45022  1.565   
-# Number of obs: 1279, groups:  days_since_outplanting, 16
-# 
-# Fixed effects:
-#                             Estimate Std. Error         df t value Pr(>|t|)
-# (Intercept)               -5.208e-04  9.306e-02  2.470e+01  -0.006    0.996
-# treatment2                 3.334e-02  6.190e-02  1.260e+03   0.539    0.590
-# complexityHigh             3.417e-03  8.754e-02  1.260e+03   0.039    0.969
-# treatment2:complexityHigh -4.979e-02  8.756e-02  1.260e+03  -0.569    0.570
-# 
-# Correlation of Fixed Effects:
-#             (Intr) trtmn2 cmplxH
-# treatment2   0.000              
-# complxtyHgh -0.470  0.000       
-# trtmnt2:cmH  0.000 -0.707  0.001
-
-
-# lmm7 --------------------------------------------------------------------
-
-
-
-# following Viktoria code for autocorelation check ------------------------
-
-# 1) first construct a groupedData object so that R knows that individuals are repeated (see Pinheiro&Bates 1998 online script: CO2 undorthodong example)
-
-# initial_0_contr_grouped<-groupedData(height~time|plant/ind, outer=~factor(region)*factor(geo_dist), data=initial_0_contr)
-# initial_0_contr_grouped
-# mine: 
-rate_grouped <- groupedData(effect.size ~ days_since_outplanting|plot/plot_grid, outer = ~factor(treatment)*factor(complexity), data = ARD_3_rate_effect4 )
-
-# 2) testing different autocorrelation structures according to UCLA script & Zuur et al. 158 without any random effects  ____________________________________________
-#     block is incorporated as a covariable (a 4way interactin did not work maybe because of overparametrization)
-
-
-# Form1<-formula(height ~ time * factor(geo_dist) * region + time * block,data=initial_0_contr_grouped)
-# mine:
-Form1 <- formula(effect.sizes ~ treatment + complexity + treatment*complexity, data = ARD_3_rate_effect4)
-
-# compound symmetry
-# M1<-gls(Form1,corr=corCompSymm(),method="ML",data=initial_0_contr_grouped)
-M1<-gls(Form1,corr=corCompSymm(),method="ML",data=rate_grouped)
-
-# unstructured covariance matrix
-# M2<-gls(Form1,corr=corSymm(),weights=varIdent(form=~1|time),method="ML",data=initial_0_contr_grouped)
-# funktioniert immer wieder nicht!
-M2<-gls(Form1,corr=corSymm(),weights=varIdent(form=~1|days_since_outplanting),method="ML",data=rate_grouped)
-
-# autoregressive var-cov matrix
-# M3<-gls(Form1,corr=corAR1(),method="ML",data=initial_0_contr_grouped)
-M3<-gls(Form1,corr=corAR1(),method="ML",data=rate_grouped)
-
-# autoregressie with heterogeneous variance var-cov matrix
-# M4<-gls(Form1,corr=corAR1(),weights=varIdent(form=~1|time),method="ML",data=initial_0_contr_grouped)# M4<-gls(Form1,corr=corAR1(),weights=varIdent(form=~1|time),method="ML",data=initial_0_contr_grouped)
-M4<-gls(Form1,corr=corAR1(),weights=varIdent(form=~1|days_since_outplanting),method="ML",data=rate_grouped)
-
-# anova(M1,M3,M4)                 # M4 is best model --> the best var-cov structure is autoregressive with heterogeneous variances
-
-anova(M1, M3, M4)
-
-
-
+# lmm1 - plot and days separate, treatment "standardized", , with outlier 
+# lmm2 - like lmm1, but no scaling treatment 
+# lmm3 - treat scaled, just days as random
+# lmm4 - treat scaled, just plot, no outlier  
+# lmm5 - treat scaled, just days, no outlier 
+# lmm6 - days and plot_grid nested in plot
+# lmm7 
+# following Viktoria code for autocorelation check 
 # test modelling 3: -------------------------------------------------------
 
 
-# nlme - transition to using nlme - random intercept just plot and just days-------------------------------------------------------
-
-
-
-# nlme allows to compund the blocks of covariance of LMMs, and also deal with time by smoothly decaying covariances of space/time models -->
-# so this model fits plot as a random effect, and corelations that decay geometrically in time = AR(1) model, auto-regression model of order 1 model
-# ok so aparently it also lets you fit models where thr resuduals are heteroscedastic and autocorrelated) (possible in lme4 with some effort
-# check Appendix A of the Bates et al paper:  https://cran.r-project.org/web/packages/lme4/vignettes/lmer.pdf )
-
-# following this: https://bookdown.org/ronsarafian/IntrotoDS/lme.html#lmms-in-r, section 9.4
-
-ARD_3_rate_effect1 <- read_csv("data/standardize to control calculations/ARD_3_rate_effect1.csv") %>% 
-  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"),
-                            labels = c("0", "0.3", "0.5", "0.7", "1.0"))) %>% 
-  mutate(complexity = factor(complexity, levels = c("Low", "High")))
-
-ARD_3_rate_effect3 <- ARD_3_rate_effect1 %>% 
-  mutate(treatment1 = as.numeric(treatment))
-
-ARD_3_rate_effect4 <- ARD_3_rate_effect3 %>% 
-  filter(visit != "HS - 8 - 3")
-
-ARD_3_rate_effect5 <- ARD_3_rate_effect4 %>% 
-  mutate(daysf = as.factor(days_since_outplanting)) %>% 
-  mutate(plotf = as.factor(plot))
-
-hist(ARD_3_rate_effect3$effect.size)
-
-# ARD_3_rate_effect2$treatment2 <- scale(ARD_3_rate_effect2$treatment1, center = TRUE, scale = TRUE)
-
-# library(lme4)
-
-
-# lme1 --------------------------------------------------------------------
-
-
-# filter out the outlier point grid HS-8 on day 3
-ARD_3_rate_effect4 <- ARD_3_rate_effect3 %>% 
-  filter(visit != "HS - 8 - 3")
-
-#going back to zuur, I think I need to make days_since_outplanting and plot factors for them to be included as random effects
-
-ARD_3_rate_effect5 <- ARD_3_rate_effect4 %>% 
-  mutate(daysf = as.factor(days_since_outplanting)) %>% 
-  mutate(plotf = as.factor(plot))
-
-# 1) days as random intercept
-
-lme1 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity, random = ~1|daysf, data = ARD_3_rate_effect5)
-summary(lme1)
-plot(lme1)
-qqnorm(resid(lme1))
-qqline(resid(lme1))
-
-# Linear mixed-effects model fit by REML
-# Data: ARD_3_rate_effect5 
-# AIC      BIC    logLik
-# 4834.022 4895.774 -2405.011
-# 
-# Random effects:
-#   Formula: ~1 | daysf
-# (Intercept) Residual
-# StdDev:   0.2778794 1.567883
-# 
-# Fixed effects: effect.size ~ treatment + complexity + treatment * complexity 
-# Value Std.Error   DF    t-value p-value
-# (Intercept)                 -0.07929688 0.1550200 1254 -0.5115268  0.6091
-# treatment0.3                 0.08736979 0.1959854 1254  0.4457975  0.6558
-# treatment0.5                 0.10260417 0.1959854 1254  0.5235298  0.6007
-# treatment0.7                 0.08476563 0.1959854 1254  0.4325100  0.6654
-# treatment1.0                 0.11914063 0.1959854 1254  0.6079057  0.5434
-# complexityHigh               0.05377604 0.1959854 1254  0.2743881  0.7838
-# treatment0.3:complexityHigh  0.00052083 0.2771652 1254  0.0018791  0.9985
-# treatment0.5:complexityHigh  0.02291667 0.2771652 1254  0.0826824  0.9341
-# treatment0.7:complexityHigh -0.20010322 0.2774401 1254 -0.7212482  0.4709
-# treatment1.0:complexityHigh -0.07617188 0.2771652 1254 -0.2748249  0.7835
-# Correlation: 
-#   (Intr) trt0.3 trt0.5 trt0.7 trt1.0 cmplxH t0.3:H t0.5:H t0.7:H
-# treatment0.3                -0.632                                                        
-# treatment0.5                -0.632  0.500                                                 
-# treatment0.7                -0.632  0.500  0.500                                          
-# treatment1.0                -0.632  0.500  0.500  0.500                                   
-# complexityHigh              -0.632  0.500  0.500  0.500  0.500                            
-# treatment0.3:complexityHigh  0.447 -0.707 -0.354 -0.354 -0.354 -0.707                     
-# treatment0.5:complexityHigh  0.447 -0.354 -0.707 -0.354 -0.354 -0.707  0.500              
-# treatment0.7:complexityHigh  0.447 -0.353 -0.353 -0.706 -0.353 -0.706  0.500  0.500       
-# treatment1.0:complexityHigh  0.447 -0.354 -0.354 -0.354 -0.707 -0.707  0.500  0.500  0.500
-# 
-# Standardized Within-Group Residuals:
-#   Min          Q1         Med          Q3         Max 
-# -5.87130032 -0.34114368 -0.00493099  0.32080465  5.85015203 
-# 
-# Number of Observations: 1279
-# Number of Groups: 16 
-
-F0 <- fitted(lme1, level = 0)
-F1 <- fitted(lme1, level = 1)
-I <- order(ARD_3_rate_effect5$effect.size); effect.sizes <- sort(ARD_3_rate_effect5$effect.size)
-plot(effect.sizes, F0[I], lwd = 4, type = "l",
-       ylim = c(0, 1), ylab = "treat*comp", xlab = "recruit rate")
-for (i in 1:9){
-  x1 <- ARD_3_rate_effect5$effect.size[ARD_3_rate_effect5$days_since_outplanting == i]
-  y1 <- F1[ARD_3_rate_effect5$days_since_outplanting == i]
-  K <- order(x1)
-  lines(sort(x1), y1[K]) }
-text(ARD_3_rate_effect5$effect.size, ARD_3_rate_effect5$days_since_outplanting, cex = 0.9)
-
-#   this just looks fucky. don't know what it means... but i assume it means model isn't primo??
-
-# lme2 --------------------------------------------------------------------
-
-
-#2) plot as random intercept
-
-lme2 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity, random = ~1|plotf, data = ARD_3_rate_effect5)
-summary(lme2)
-plot(lme2)
-qqnorm(resid(lme2))
-qqline(resid(lme2))
-
-# Linear mixed-effects model fit by REML
-# Data: ARD_3_rate_effect5 
-# AIC      BIC   logLik
-# 4852.32 4914.071 -2414.16
-# 
-# Random effects:
-#   Formula: ~1 | plotf
-# (Intercept) Residual
-# StdDev: 6.045188e-05 1.590993
-# 
-# Fixed effects: effect.size ~ treatment + complexity + treatment * complexity 
-# Value Std.Error   DF    t-value p-value
-# (Intercept)                 -0.07929688 0.1406252 1267 -0.5638879  0.5729
-# treatment0.3                 0.08736979 0.1988741 1267  0.4393221  0.6605
-# treatment0.5                 0.10260417 0.1988741 1267  0.5159252  0.6060
-# treatment0.7                 0.08476563 0.1988741 1267  0.4262276  0.6700
-# treatment1.0                 0.11914063 0.1988741 1267  0.5990756  0.5492
-# complexityHigh               0.05377604 0.1988741    2  0.2704024  0.8122
-# treatment0.3:complexityHigh  0.00052083 0.2812505 1267  0.0018518  0.9985
-# treatment0.5:complexityHigh  0.02291667 0.2812505 1267  0.0814813  0.9351
-# treatment0.7:complexityHigh -0.19992721 0.2815271 1267 -0.7101525  0.4777
-# treatment1.0:complexityHigh -0.07617188 0.2812505 1267 -0.2708329  0.7866
-# Correlation: 
-#   (Intr) trt0.3 trt0.5 trt0.7 trt1.0 cmplxH t0.3:H t0.5:H t0.7:H
-# treatment0.3                -0.707                                                        
-# treatment0.5                -0.707  0.500                                                 
-# treatment0.7                -0.707  0.500  0.500                                          
-# treatment1.0                -0.707  0.500  0.500  0.500                                   
-# complexityHigh              -0.707  0.500  0.500  0.500  0.500                            
-# treatment0.3:complexityHigh  0.500 -0.707 -0.354 -0.354 -0.354 -0.707                     
-# treatment0.5:complexityHigh  0.500 -0.354 -0.707 -0.354 -0.354 -0.707  0.500              
-# treatment0.7:complexityHigh  0.500 -0.353 -0.353 -0.706 -0.353 -0.706  0.500  0.500       
-# treatment1.0:complexityHigh  0.500 -0.354 -0.354 -0.354 -0.707 -0.707  0.500  0.500  0.500
-# 
-# Standardized Within-Group Residuals:
-#   Min          Q1         Med          Q3         Max 
-# -5.84270583 -0.37695932 -0.01014828  0.36852970  5.75112584 
-# 
-# Number of Observations: 1279
-# Number of Groups: 4 
-
-
-
-# lme3 --------------------------------------------------------------------
-
-
-# what if you do the same (plot then days as random intercept) but keep that outlier in?
-ARD_3_rate_effect4.1 <- ARD_3_rate_effect3 %>% 
-  mutate(daysf = as.factor(days_since_outplanting)) %>% 
-  mutate(plotf = as.factor(plot))
-hist(ARD_3_rate_effect4.1$effect.size)
-
-lme3 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity, random = ~1|daysf, data = ARD_3_rate_effect4.1)
-summary(lme3)
-plot(lme3)
-plot(resid(lme3))
-qqnorm(resid(lme3))
-qqline(resid(lme3))
-
-# Linear mixed-effects model fit by REML
-# Data: ARD_3_rate_effect4.1 
-# AIC      BIC    logLik
-# 4940.302 5002.063 -2458.151
-# 
-# Random effects:
-#   Formula: ~1 | daysf
-# (Intercept) Residual
-# StdDev:   0.2763318 1.633096
-# 
-# Fixed effects: effect.size ~ treatment + complexity + treatment * complexity 
-# Value Std.Error   DF    t-value p-value
-# (Intercept)                 -0.07929688 0.1600262 1255 -0.4955242  0.6203
-# treatment0.3                 0.08736979 0.2041369 1255  0.4279960  0.6687
-# treatment0.5                 0.10260417 0.2041369 1255  0.5026242  0.6153
-# treatment0.7                 0.08476563 0.2041369 1255  0.4152390  0.6780
-# treatment1.0                 0.11914063 0.2041369 1255  0.5836309  0.5596
-# complexityHigh               0.05377604 0.2041369 1255  0.2634312  0.7923
-# treatment0.3:complexityHigh  0.00052083 0.2886932 1255  0.0018041  0.9986
-# treatment0.5:complexityHigh  0.02291667 0.2886932 1255  0.0793807  0.9367
-# treatment0.7:complexityHigh -0.07187500 0.2886932 1255 -0.2489667  0.8034
-# treatment1.0:complexityHigh -0.07617188 0.2886932 1255 -0.2638506  0.7919
-# Correlation: 
-#   (Intr) trt0.3 trt0.5 trt0.7 trt1.0 cmplxH t0.3:H t0.5:H t0.7:H
-# treatment0.3                -0.638                                                        
-# treatment0.5                -0.638  0.500                                                 
-# treatment0.7                -0.638  0.500  0.500                                          
-# treatment1.0                -0.638  0.500  0.500  0.500                                   
-# complexityHigh              -0.638  0.500  0.500  0.500  0.500                            
-# treatment0.3:complexityHigh  0.451 -0.707 -0.354 -0.354 -0.354 -0.707                     
-# treatment0.5:complexityHigh  0.451 -0.354 -0.707 -0.354 -0.354 -0.707  0.500              
-# treatment0.7:complexityHigh  0.451 -0.354 -0.354 -0.707 -0.354 -0.707  0.500  0.500       
-# treatment1.0:complexityHigh  0.451 -0.354 -0.354 -0.354 -0.707 -0.707  0.500  0.500  0.500
-# 
-# Standardized Within-Group Residuals:
-#   Min           Q1          Med           Q3          Max 
-# -5.632867939 -0.324539534 -0.002025728  0.314333878  9.889497429 
-# 
-# Number of Observations: 1280
-# Number of Groups: 16
-
-
-# lme4 --------------------------------------------------------------------
-
-# what if you do the same (plot then days as random intercept) but keep that outlier in?
-ARD_3_rate_effect4.1 <- ARD_3_rate_effect3 %>% 
-  mutate(daysf = as.factor(days_since_outplanting)) %>% 
-  mutate(plotf = as.factor(plot))
-hist(ARD_3_rate_effect4.1$effect.size)
-
-lme4 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity, random = ~1|plotf, data = ARD_3_rate_effect4.1)
-summary(lme4)
-plot(lme4)
-plot(resid(lme4))
-qqnorm(resid(lme4))
-qqline(resid(lme4))
-
-# Linear mixed-effects model fit by REML
-# Data: ARD_3_rate_effect4.1 
-# AIC      BIC    logLik
-# 4956.337 5018.099 -2466.169
-# 
-# Random effects:
-#   Formula: ~1 | plotf
-# (Intercept) Residual
-# StdDev: 6.572026e-05 1.655038
-# 
-# Fixed effects: effect.size ~ treatment + complexity + treatment * complexity 
-# Value Std.Error   DF    t-value p-value
-# (Intercept)                 -0.07929688 0.1462861 1268 -0.5420671  0.5879
-# treatment0.3                 0.08736979 0.2068798 1268  0.4223216  0.6729
-# treatment0.5                 0.10260417 0.2068798 1268  0.4959604  0.6200
-# treatment0.7                 0.08476563 0.2068798 1268  0.4097337  0.6821
-# treatment1.0                 0.11914063 0.2068798 1268  0.5758931  0.5648
-# complexityHigh               0.05377604 0.2068798    2  0.2599386  0.8192
-# treatment0.3:complexityHigh  0.00052083 0.2925722 1268  0.0017802  0.9986
-# treatment0.5:complexityHigh  0.02291667 0.2925722 1268  0.0783282  0.9376
-# treatment0.7:complexityHigh -0.07187500 0.2925722 1268 -0.2456659  0.8060
-# treatment1.0:complexityHigh -0.07617188 0.2925722 1268 -0.2603524  0.7946
-# Correlation: 
-#   (Intr) trt0.3 trt0.5 trt0.7 trt1.0 cmplxH t0.3:H t0.5:H t0.7:H
-# treatment0.3                -0.707                                                        
-# treatment0.5                -0.707  0.500                                                 
-# treatment0.7                -0.707  0.500  0.500                                          
-# treatment1.0                -0.707  0.500  0.500  0.500                                   
-# complexityHigh              -0.707  0.500  0.500  0.500  0.500                            
-# treatment0.3:complexityHigh  0.500 -0.707 -0.354 -0.354 -0.354 -0.707                     
-# treatment0.5:complexityHigh  0.500 -0.354 -0.707 -0.354 -0.354 -0.707  0.500              
-# treatment0.7:complexityHigh  0.500 -0.354 -0.354 -0.707 -0.354 -0.707  0.500  0.500       
-# treatment1.0:complexityHigh  0.500 -0.354 -0.354 -0.354 -0.707 -0.707  0.500  0.500  0.500
-# 
-# Standardized Within-Group Residuals:
-#   Min         Q1        Med         Q3        Max 
-# -5.6166095 -0.3700034 -0.0105423  0.3500203  9.8261359 
-# 
-# Number of Observations: 1280
-# Number of Groups: 4 
-
-
-### lme1 had best AIC, so going to plot the fitted values to look at it ###
-
-
-# lme5 - plot and days as random effects - days nested in plot#### 
-
-# is there a way to include both days and plot as random effects
-# let's try for outlier out df ARD_3_effect5
-View(ARD_3_rate_effect5)
-hist(ARD_3_rate_effect5$effect.size)
- # quite 0 inflated...
-
-#some stack overflow examples: (they didn't work)
-# lme5 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity,
-#                   random = list(plotf = ~1, daysf = ~effect.size) , 
-#                   weights = varIdent(form = ~1|daysf),
-#                   data = ARD_3_rate_effect5)
-# 
-# lme5 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity,
-#                   random = ~ (1|plotf) + (1|daysf) , 
-#                   data = ARD_3_rate_effect5)
-
-# in zuur they only cover two random effects that are nested, for mine I think it would be plot nested in days?
-# maybe try both?
-lme5 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity, random = ~ 1 | plotf / daysf,data = ARD_3_rate_effect5, method = "REML")
-summary(lme5)
-plot(lme5)
-plot(resid(lme5))
-qqnorm(resid(lme5))
-qqline(resid(lme5))
-
-
-
-
-# Linear mixed-effects model fit by REML
-# Data: ARD_3_rate_effect5 
-# AIC     BIC    logLik
-# 4835.282 4902.18 -2404.641
-# 
-# Random effects:
-#   Formula: ~1 | plotf
-# (Intercept)
-# StdDev: 8.57211e-05
-# 
-# Formula: ~1 | daysf %in% plotf
-# (Intercept) Residual
-# StdDev:   0.3563498 1.551578
-# 
-# Fixed effects: effect.size ~ treatment + complexity + treatment * complexity 
-# Value Std.Error   DF    t-value p-value
-# (Intercept)                 -0.07929688 0.1509174 1207 -0.5254324  0.5994
-# treatment0.3                 0.08736979 0.1939472 1207  0.4504823  0.6524
-# treatment0.5                 0.10260417 0.1939472 1207  0.5290314  0.5969
-# treatment0.7                 0.08476563 0.1939472 1207  0.4370551  0.6621
-# treatment1.0                 0.11914063 0.1939472 1207  0.6142941  0.5391
-# complexityHigh               0.05377604 0.2134294    2  0.2519618  0.8246
-# treatment0.3:complexityHigh  0.00052083 0.2742828 1207  0.0018989  0.9985
-# treatment0.5:complexityHigh  0.02291667 0.2742828 1207  0.0835512  0.9334
-# treatment0.7:complexityHigh -0.19628789 0.2745595 1207 -0.7149192  0.4748
-# treatment1.0:complexityHigh -0.07617188 0.2742828 1207 -0.2777129  0.7813
-# Correlation: 
-#   (Intr) trt0.3 trt0.5 trt0.7 trt1.0 cmplxH t0.3:H t0.5:H t0.7:H
-# treatment0.3                -0.643                                                        
-# treatment0.5                -0.643  0.500                                                 
-# treatment0.7                -0.643  0.500  0.500                                          
-# treatment1.0                -0.643  0.500  0.500  0.500                                   
-# complexityHigh              -0.707  0.454  0.454  0.454  0.454                            
-# treatment0.3:complexityHigh  0.454 -0.707 -0.354 -0.354 -0.354 -0.643                     
-# treatment0.5:complexityHigh  0.454 -0.354 -0.707 -0.354 -0.354 -0.643  0.500              
-# treatment0.7:complexityHigh  0.454 -0.353 -0.353 -0.706 -0.353 -0.642  0.499  0.499       
-# treatment1.0:complexityHigh  0.454 -0.354 -0.354 -0.354 -0.707 -0.643  0.500  0.500  0.499
-# 
-# Standardized Within-Group Residuals:
-#   Min          Q1         Med          Q3         Max 
-# -6.29735782 -0.35962772 -0.01010352  0.31319772  5.59933751 
-# 
-# Number of Observations: 1279
-# Number of Groups: 
-#   plotf daysf %in% plotf 
-# 4               64
-
-
-# lme6 - plot nested in days--------------------------------------------------------------------
-
-# in zuur they only cover two random effects that are nested, for mine I think it would be plot nested in days?
-# maybe try both?
-lme6 <- nlme::lme(effect.size ~ treatment + complexity + treatment*complexity, random = ~ 1 | daysf / plotf,data = ARD_3_rate_effect5, method = "REML")
-summary(lme6)
-plot(lme6)
-plot(resid(lme6))
-qqnorm(resid(lme6))
-qqline(resid(lme6))
-
-
-# Linear mixed-effects model fit by REML
-# Data: ARD_3_rate_effect5 
-# AIC      BIC    logLik
-# 4830.861 4897.759 -2402.431
-# 
-# Random effects:
-#   Formula: ~1 | daysf
-# (Intercept)
-# StdDev:    0.246716
-# 
-# Formula: ~1 | plotf %in% daysf
-# (Intercept) Residual
-# StdDev:    0.260476 1.551618
-# 
-# Fixed effects: effect.size ~ treatment + complexity + treatment * complexity 
-# Value Std.Error   DF    t-value p-value
-# (Intercept)                 -0.07929688 0.1572682 1207 -0.5042144  0.6142
-# treatment0.3                 0.08736979 0.1939522 1207  0.4504707  0.6525
-# treatment0.5                 0.10260417 0.1939522 1207  0.5290177  0.5969
-# treatment0.7                 0.08476563 0.1939522 1207  0.4370438  0.6622
-# treatment1.0                 0.11914063 0.1939522 1207  0.6142782  0.5391
-# complexityHigh               0.05377604 0.2045922   47  0.2628451  0.7938
-# treatment0.3:complexityHigh  0.00052083 0.2742899 1207  0.0018988  0.9985
-# treatment0.5:complexityHigh  0.02291667 0.2742899 1207  0.0835491  0.9334
-# treatment0.7:complexityHigh -0.19747021 0.2745657 1207 -0.7192092  0.4722
-# treatment1.0:complexityHigh -0.07617188 0.2742899 1207 -0.2777058  0.7813
-# Correlation: 
-#   (Intr) trt0.3 trt0.5 trt0.7 trt1.0 cmplxH t0.3:H t0.5:H t0.7:H
-# treatment0.3                -0.617                                                        
-# treatment0.5                -0.617  0.500                                                 
-# treatment0.7                -0.617  0.500  0.500                                          
-# treatment1.0                -0.617  0.500  0.500  0.500                                   
-# complexityHigh              -0.650  0.474  0.474  0.474  0.474                            
-# treatment0.3:complexityHigh  0.436 -0.707 -0.354 -0.354 -0.354 -0.670                     
-# treatment0.5:complexityHigh  0.436 -0.354 -0.707 -0.354 -0.354 -0.670  0.500              
-# treatment0.7:complexityHigh  0.436 -0.353 -0.353 -0.706 -0.353 -0.670  0.499  0.499       
-# treatment1.0:complexityHigh  0.436 -0.354 -0.354 -0.354 -0.707 -0.670  0.500  0.500  0.499
-# 
-# Standardized Within-Group Residuals:
-#   Min          Q1         Med          Q3         Max 
-# -6.17661570 -0.35301229 -0.01222638  0.32452977  5.69596532 
-# 
-# Number of Observations: 1279
-# Number of Groups: 
-#   daysf plotf %in% daysf 
-# 16               64 
-
-
-
-### OK SO -  nlme can't handle 2 independent random effects (or at least from my diging it sounds like it's complicated and nests them)
-## SO I found a package that if I use lme4 it will give AIC and anova output so gonna go back and do that
-## keep in mind - can't compare aic across models w dif fixed effects 
-
-
-
-
-
-
-
-
-
-
+# nlme - transition to using nlme - random intercept just plot and just days
+# lme1 
+# lme2 
+# lme3 
+# lme4 
+# lme5 - plot and days as random effects - days nested in plot
+# lme6 - plot nested in days
 # test modelling 4: -------------------------------------------------------
 
 library(lme4)
@@ -2280,7 +1617,7 @@ ggplot() +
   facet_grid(.~C) 
 
 
-# gls and lmm with AR1 *use this ------------------------------------------
+# gls and lmm with AR1 *USE THIS ------------------------------------------
 
 
 library(nlme)
@@ -2625,6 +1962,7 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
+
 # B. RELATIVE FINAL DENSITY ---------------------------------------------------------------------
 
 # for the relative final density bit I could either consider repeated measures factorial design (if assumptions are met) or glmm like originally planned
@@ -2907,7 +2245,7 @@ testUniformity(simoutglm) #KS test, p < 0.05, so not uniform
 testTemporalAutocorrelation(simulationOutput = simoutglm, time = ARD4f1$visit) #can only do this if there's unique values per time step
 
 
-# dharma for glmm.gam1 (visit as re) *use this -------------------------
+# dharma for glmm.gam1 (visit as re) *USE THIS -------------------------
 
 summary(glmm.gam1)
 car::Anova(glmm.gam1)
@@ -3088,6 +2426,7 @@ ggplot() +
   ggtitle("just data - final rel abun 4-6") +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
+
 
 
 
@@ -3445,6 +2784,7 @@ ggplot() +
   ggtitle("just data - final rel abun 4-6 - no outliers over 10") +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
+
 
 
 
@@ -3952,11 +3292,11 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
+
 # D. RICHNESS ----------------------------------------------------
 
 
 # richness
-
 
 
 
@@ -4021,6 +3361,8 @@ testDispersion(M1glmmTMBr)
 # p > 0.05, not oversdispersed, p-value = 0.616
 
 simouttmb3r <- simulateResiduals(fittedModel =M1glmmTMBr, plot = T) # wow this looks great
+simouttmb3r2 <- simulateResiduals(fittedModel =M3glmmTMBr, plot = T) # the one with visit and plot as re also looks good (if u decide to use this)
+
 residuals(simouttmb3r)
 plot(simouttmb3r) # lots of issues in qq: lack onf uniformity, outliers and dispersion
 # residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
