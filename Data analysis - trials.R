@@ -759,10 +759,10 @@ ggplot() +
   ggtitle("just data - overall rich (0-3")
 
 
+
 # 2b) STRUCTURE VS NO STRUCTURE * BACKGROUND COMPLEXITY --------------------------------------------
 
-# uneven sample size, consider kruskall wallis test
-
+# uneven sample size, consider kruskall wallis test? 
 
 # code from lab 5 of 430: 
 options(contrasts=c("contr.sum","contr.poly"))
@@ -778,10 +778,249 @@ options(contrasts=c("contr.sum","contr.poly"))
 # subgroups) because Type I, Type II, and Type III SSs are all equal under those conditions.
 # However, they can differ widely when analyzing unbalanced data, so it is a good practice to
 # use the options command above whenever you are doing ANOVA analyses in R _______________________________________________
+___________________________________________________
+
 
 # A. RECRUITMENT RATE -----------------------------------------------------
+# option 1) two-way anova --------------------------------------------------------
+
+ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv", 
+                       col_types = cols(X1 = col_skip())) %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rate = as.numeric(rate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+
+#checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
+
+ARDrsc <- ARD_3_rate %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes"))
+
+#check normality: 
+hist(ARDrs$rate) #normalish, a few v big or small responses, not surprising given variability in recruitment rate
+shapiro.test(ARDrs$rate) # nope,  p-value < 2.2e-16
+range(ARDrs$rate) #-9 to 16
+
+# homogeneity of variance
+boxplot(rate~plot, data = ARDrs) 
+boxplot(rate~visit, data = ARDrs) #not as extreme cheese wedge, but still there?
+boxplot(rate~structure, data = ARDrs) # looks good
+boxplot(rate~C, data = ARDrs) #also looks good
+boxplot()
+
+leveneTest(ARDrs$rate, ARDrs$structure) #homo,  0.8257
+leveneTest(ARDrs$rate, ARDrs$C) #homo, 0.9423
+
+describeBy(ARDrs, group=list(ARDrs$structure, ARDrs$C)) 
+# low complexity, no structure: 0.08 fish/day (SD=  1.33
+# low complexity, yes structure:  0.09  1.71
+# high comp, no struct: 0.04  1.98
+# high comp, yes struct: 0.08  1.73
+
+aov.rate <- aov(rate~C*structure, data = ARDrs)
+aov.rate
+summary(aov.rate) #no sig effects of any main effect or interaction 
+
+# Response: rate
+# Df Sum Sq Mean Sq F value Pr(>F)
+# C              1    0.1 0.05583  0.0190 0.8903
+# structure      1    0.1 0.12583  0.0429 0.8359
+# C:structure    1    0.1 0.06990  0.0238 0.8773
+# Residuals   1436 4209.4 2.93135  
+
+plot(aov.rate, which = 2, add.smooth = FALSE) # qq: oh that does not look great
+plot(aov.rate, which = 3, add.smooth = FALSE) # residuals: looks like constant variance...
+
+# no need to do Tukey since there's no sig term
+
+
+# option 2) lmm (or lm)*use gls in here ---------------------------------------------------
+
+# option 2) lmm
+
+ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv", 
+                       col_types = cols(X1 = col_skip())) %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rate = as.numeric(rate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+
+#checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
+
+ARDrsc <- ARD_3_rate %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  mutate(structure = as.factor(structure))
+
+hist(ARDrsc$rate) #normalish
+
+M0sc <- gls(rate~ structure*C, data = ARDrsc) #lm
+summary(M0sc) #not sig
+#can't actually trust these values since violating assumption of independence...
+
+#make an acf plot to visualize if there's any autocorrelation
+E <- residuals(M0sc, type = "normalized")           
+I1 <- !is.na(ARDrsc$rate)
+Efull <- vector(length = length(ARDrsc$rate))
+Efull <- NA
+Efull[I1] <- E
+acf(Efull, na.action = na.pass,
+    main = "Auto-correlation plot for residuals")
+
+#some kidn of temporal autocorrelation structure, prob the same as the other lmm
+
+# test 4 dif autocorrelation strucutres: (following code from Zuur)____________________________________________________________________
+
+# compound symmetry
+M1sc <- gls(rate~ structure*C, correlation = corCompSymm(form = ~ visit), data = ARDrsc)  #new one
+
+# unstructured covariance matrix
+# M2sc<-gls(rate~structure*C,corr=corSymm(form = ~ visit),weights=varIdent(form=~1|visit),method="ML",data=ARDrsc)
+# funktioniert immer wieder nicht!
+# it also ist nicht funktionen for me...
+
+# autoregressive var-cov matrix
+# M2sc <- gls(rate~ structure*C, correlation = corAR1(form = ~ visit|plot_grid), data= ARDrsc) #didn't work...
+
+# autoregressie with heterogeneous variance var-cov matrixr
+M3sc <- gls(rate ~ structure*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrsc) #this one worked
+
+anova(M1sc, M3sc) #M3gls has best structure, unsurprising
+
+M3scresids <- resid(M3sc)
+
+plot(M3sc, which = 1)
+hist(M3scresids)# yup looks normal
+qqnorm(M3scresids) #looks just ok
+qqline(M3scresids)
+acf(M3scresids,na.action = na.pass, main = "autocorrelation plot for resids")
+
+boxplot(rrate~plot, data = ARDrr) # doesn't look like there's much going on here, there's 4 levels, the plots are on the same reef so not that far apart, may not end up being important is my guess
+boxplot(rrate~visit, data = ARDrr) # vury interesting, perhaps the autoregressive w het var-cov may actually makes sense looking at this! :)
+
+#OK So the best autoregressive structure is M3gls, with autoregressive variance-covariance structure with heterogeneous variances
+#from her code:
+# the data has an autoregressive var-cov structure with heterogeneous variances
+# what does it mean? it means observations that are more proximate are correlated and variances change over time (obs. closer to each other are more similar)
+
+#Next: Check random effects with the correct autocorrelation structre (from M3gls) _________________________________________
+lmmM1sc <- lme(rate~structure*C, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc) #convergence issues
+lmmM2sc <- lme(rate~structure*C, random = ~1|plot/visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc) #convergence issues
+lmmM3sc <- lme(rate~structure*C, random = ~1|plot, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc) #convergence issues
+
+#ok so all of them had convergence issues
+# compare lm to gls:
+AIC(M0sc, M3sc) #the gls one is better
+
+# now check if adding plot as a "nuissance" fixed effect matters__________________________________________________________
+
+lmsc <- lme(rate~structure*C + plot, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc)
+lmsc1 <- gls(rate~ structure*C + plot, data = ARDrsc)
+# getting Singularity error for both, I don't think plot matters...
+
+# so the gls model is the best fitting one because it takes temporal autocorrelation into account,
+
+# inspect models: _________________________________________________________________________________________________________
+
+# inspecting heteroscedacity of residuals - just lm
+H1a<-resid(M0sc,type="normalized")
+H2a<-fitted(M0sc)
+par(mfrow=c(2,2))
+plot(x=H2a,y=H1a, xlab="fitted values", ylab="residuals")
+boxplot(H1a~visit, data=ARDrsc, main="visit",ylab="residuals")
+boxplot(H1a~structure, data=ARDrsc, main="treatment",ylab="residuals")
+boxplot(H1a~C, data=ARDrsc, main="complexity",ylab="residuals")
+
+# inspecting heteroscedacity of residuals - gls             #this one is better
+H1b<-resid(M3sc,type="normalized")
+H2b<-fitted(M3sc)
+par(mfrow=c(2,2))
+plot(x=H2b,y=H1b, xlab="fitted values", ylab="residuals")
+boxplot(H1b~visit, data=ARDrsc, main="visit",ylab="residuals")
+boxplot(H1b~structure, data=ARDrsc, main="treatment",ylab="residuals")
+boxplot(H1b~C, data=ARDrsc, main="complexity",ylab="residuals")
+
+par(mfrow=c(1,1))
+
+# checking for normality of residulas
+
+qqnorm(M3sc, main = "just gls with AR1") #this one is less worse, still not great
+qqnorm(M0sc, main = "lm")  
+
+acf(H1b,na.action = na.pass, main = "autocorrelation plot for resids gls")  
+
+anova(M3sc)
+summary(M3sc)
+
+# recruitment rate between H/L and structure N/Y is not significant when using gls with AR1 temporal regression structure
+
+
+# visualize: --------------------------------------------------------------
+
+# lmm
+predM3sc <- ggpredict(M3sc, terms = c("structure", "C")) %>% 
+  rename(structure = x) %>% 
+  rename(C = group)
+
+#same graph: ()         #honestly not that great of a model, but considering it was non-sig even for type II anova...
+ggplot() +
+  geom_col(data = ARDrsc_sum,
+           aes(x = structure,
+               y = rate.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.35) +
+  geom_col(data = predM3sc,
+           aes(x = structure,
+               y = predicted,
+               group = structure),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM3sc,
+                aes(x = structure,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  ggtitle("predicted AR1 gls (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+# data
+ARDrsc_sum <- ARDrsc %>% 
+  group_by(structure, C) %>% 
+  summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
+  mutate(rate.se = rate.sd/sqrt(1440))
+
+ggplot() +
+  geom_col(data = ARDrsc_sum,
+           aes(x = structure,
+               y = rate.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDrsc_sum,
+                aes(x = structure,
+                    ymin = rate.mean+rate.se,
+                    ymax = rate.mean-rate.se),
+                width = 0.3) +
+  ggtitle("just data, structure * complexity") +
+# ylim(-0.4,0.7) +
+facet_grid(.~C)
+
+
 # B. FINAL DENSITY ---------------------------------------------------------------------
 # C. DIVERSITY METRICS ----------------------------------------------------
+
 
 
 
