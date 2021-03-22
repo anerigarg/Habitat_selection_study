@@ -200,7 +200,7 @@ wilcox.test(ARD4bc$density ~ ARD4bc$C)
 # I'm surprised these aren't sig different considering mean and sd
 
 
-#  option 3) glmm ---------------------------------------------------------
+#  option 3) glmm - don't use... ---------------------------------------------------------
 
 glmm4bc <- glmmTMB(density~C, data = ARD4bc)
 glmm4bc1 <- glmmTMB(density~C + (1|plot), data = ARD4bc)
@@ -418,7 +418,348 @@ ggplot() +
 
 
 
-# 2) STRUCTURE VS NO STRUCTURE --------------------------------------------
+# 2a) STRUCTURE VS NO STRUCTURE --------------------------------------------
+
+# uneven sample size, consider taking random sample from "structure" df to compare to
+ _____________________________________________________________________________
+
+# A. RECRUITMENT RATE -----------------------------------------------------
+# option 1) t-test --------------------------------------------------------
+
+
+ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv", 
+                       col_types = cols(X1 = col_skip())) %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rate = as.numeric(rate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+
+#checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
+
+ARDrs <- ARD_3_rate %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes"))
+  
+
+#check normality: 
+hist(ARDrs$rate) #normalish, a few v big or small responses, not surprising given variability in recruitment rate
+shapiro.test(ARDrs$rate) # nope,  p-value < 2.2e-16
+range(ARDrs$rate) #-9 to 16
+
+# homogeneity of variance
+boxplot(rate~plot, data = ARDrs) 
+boxplot(rate~visit, data = ARDrs) #not as extreme cheese wedge, but still there
+boxplot(rate~structure, data = ARDrs) # looks good
+leveneTest(ARDrs$rate, ARDrs$structure) #homo,  0.8257
+
+describeBy(ARDrs, group=ARDrs$structure) 
+# mean recruitment rate in areas with no structure is 0.06 fish/day (SD = 1.68) and mean recruitment rate for 
+# areas with added structure is 0.09 fish//day (SD = 1.72)
+
+ttest.rs <- t.test(ARDrs$rate ~ ARDrs$structure, var.equal=TRUE)
+ttest.rs
+
+# A Welch's two-sample t-tes showed that the difference was not sig different (t = -0.20733, df = 1438, p-value = 0.8358)
+
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+wilcox.test(ARDrs$rate ~ ARDrs$structure)
+# W = 141202, p-value = 0.6326
+
+
+# visualize: --------------------------------------------------------------
+
+# data
+ARDrs_sum <- ARDrs %>% 
+  group_by(structure) %>% 
+  summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
+  mutate(rate.se = rate.sd/sqrt(1440))
+
+ggplot() +
+  geom_col(data = ARDrs_sum,
+           aes(x = structure,
+               y = rate.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDrs_sum,
+                aes(x = structure,
+                    ymin = rate.mean+rate.se,
+                    ymax = rate.mean-rate.se),
+                width = 0.3) +
+  ggtitle("just data, structure vs no structure")
+# ylim(-0.4,0.7) +
+# facet_grid(.~C) 
+
+
+# still figuring out how to extract predicted values from a t-test:
+# #ttest rate
+# predt <- ggpredict(ttest.rbc, terms = "C") %>% 
+#   rename(C = x)
+# pred <-ggpredict(ttest.rbc)
+# 
+# ARDr_sum <- ARDr %>% 
+#   group_by(Tr, C) %>% 
+#   summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+#   mutate(rrate.se = rrate.sd/sqrt(1280))
+# 
+# #same graph: ()
+# ggplot() +
+#   geom_col(data = ARDr_sum,
+#            aes(x = Tr,
+#                y = rrate.mean,
+#                group = Tr,
+#                fill = Tr),
+#            alpha = 0.35) +
+#   geom_col(data = predM1a,
+#            aes(x = Tr,
+#                y = predicted,
+#                group = Tr),
+#            colour = "black",
+#            fill = "transparent",
+#            size = 1.2) +
+#   geom_errorbar(data = predM1a,
+#                 aes(x = Tr,
+#                     ymin = predicted+std.error,
+#                     ymax = predicted-std.error),
+#                 width = 0.3) +
+#   ggtitle("predicted AR1 lmm (outline) over data (colour)") +
+#   # ylim(-0.4,0.7) +
+#   facet_grid(.~C) 
+
+
+
+
+# B. FINAL DENSITY ---------------------------------------------------------------------
+# option 1) t.test --------------------------------------------------------
+
+ARD_4to6 <- read_csv("data/filter 0 values/ARD_4to6.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+ARD4s <- ARD_4to6 %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  filter(visit %in% c("14", "15", "16"))
+
+#checks out, 288 obs
+
+hist(ARD4s$density) #poisson
+shapiro.test(ARD4s$density) # nope, p-value < 2.2e-16
+range(ARD4s$density) #0 to 20
+
+# homogeneity of variance
+boxplot(density~plot, data = ARD4s) #quite a bit of variation
+boxplot(density~visit, data = ARD4s) 
+boxplot(density~structure, data = ARD4s) # looks hetero
+leveneTest(ARD4s$density, ARD4s$structure) #homogeneous, 0.216
+
+describeBy(ARD4s, group=ARD4s$structure) 
+# mean final densit for no added structure is 2.27 (SD = 2.91) and mean final density for added structure  is 3.03 (SD = 3.52)
+# no median is 1, yes median is 2 
+
+ttest.4s <- t.test(ARD4s$density ~ ARD4s$structure, var.equal=TRUE)
+ttest.4s
+
+# not significant (t = -1.4084, df = 286, p-value = 0.1601)
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+wilcox.test(ARD4s$density ~ ARD4s$structure)
+# not significant  (W = 5015.5, p-value = 0.1515)
+# I'm surprised these aren't sig different considering mean and sd
+
+
+# visualize:  -------------------------------------------------------------
+
+# data
+ARD4s_sum <- ARD4s %>% 
+  group_by(structure) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(288))
+
+ggplot() +
+  geom_col(data = ARD4s_sum,
+           aes(x = structure,
+               y = dens.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data = ARD4s_sum,
+                aes(x = structure,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("just data - final density 4-6")
+
+
+
+# C. OVERALL DENSITY ------------------------------------------------------
+# option 1) t.test --------------------------------------------------------
+
+
+ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+
+ARD3s <- ARD_3 %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  mutate(density1 = sqrt(density)) %>% 
+  mutate(density2 = log(density)) %>% 
+  mutate(density3 = Math.cbrt(density))
+
+#checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
+
+#check normality: 
+hist(ARD3s$density) #that's a neg binom
+hist(ARD3s$density1)
+hist(ARD3s$density2) #least worst
+hist(ARD3s$density3) #they all kind of suck, maybe a non-parametric test right away?
+
+shapiro.test(ARD3s$density) # nope,  p-value < 2.2e-16
+range(ARD3s$density) #0 to 27
+
+# homogeneity of variance
+boxplot(density~plot, data = ARD3s) #just LS seems a bit wider var
+boxplot(density~visit, data = ARD3s) 
+boxplot(density~structure, data = ARD3s) # looks homo
+leveneTest(ARD3s$density, ARD3s$structure) #homo,p = 0.08155
+
+describeBy(ARD3s, group=ARD3s$structure) 
+# mean density for no structure is  2.12  (SD = ) 2.92) and mean density for yes structure  is  2.58 (SD = 3.27)
+# no structure median is 1, yes strcutre median is 2
+
+# ttest.4bc <- t.test(ARD4bc$density ~ ARD4bc$C, var.equal=TRUE)
+# ttest.4bc
+ttest.3s <- t.test(ARD3s$density ~ ARD3s$structure, var.equal=TRUE) #same output
+ttest.3s
+
+# significant (t = -2.1001, df = 1534, p-value = 0.03589)
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+w3s <- wilcox.test(ARD3s$density ~ ARD3s$structure)
+# overall recruit density is significantly different between plots with and without added structure  (W = 148020, p-value = 0.01279)
+w3s
+
+# visualise:  -------------------------------------------------------------
+
+#data
+
+ARD3s_sum <- ARD3s %>% 
+  group_by(structure) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(1536))
+
+ggplot() +
+  geom_col(data = ARD3s_sum,
+           aes(x = structure,
+               y = dens.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3s_sum,
+                aes(x = structure,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("just data - overall density (0-3")
+
+
+
+# D. DIVERSITY METRICS ----------------------------------------------------
+# option 1) t.test --------------------------------------------------------
+
+ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+#checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
+
+ARD3sr <- ARD_3_rich %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes")) %>% 
+  mutate(rich1 = sqrt(rich)) %>% 
+  mutate(rich2 = log(rich)) %>% 
+  mutate(rich3 = Math.cbrt(rich))
+
+#check normality: 
+hist(ARD3sr$rich) #that's poisson-y
+hist(ARD3sr$rich1) #nope
+hist(ARD3sr$rich2)  #meh
+hist(ARD3sr$rich3) #they all kind of suck, maybe a non-parametric test right away?
+
+shapiro.test(ARD3sr$rich) # nope,p-value = p-value < 2.2e-16
+range(ARD3sr$rich) #0 to 7
+
+# homogeneity of variance
+boxplot(rich~plot, data = ARD3sr) #LN seems lower
+boxplot(rich~visit, data = ARD3sr) #less richness in second half?
+boxplot(rich~structure, data = ARD3sr) # looks hetero and higher in yes structre
+leveneTest(ARD3sr$rich, ARD3sr$structure) #hetero for sure, p = 3.059e-06 ***
+
+describeBy(ARD3sr, group=ARD3sr$structure) 
+# mean richness for no structure is 0.95 (SD = 0.86) and mean richness for yes structure is 1.39 (SD = 1.27)
+# no s median is 1, H median is 1
+
+ttest.3sr <- t.test(ARD3sr$rich ~ ARD3sr$structure, var.equal=FALSE)
+ttest.3sr
+
+
+#  significant (t = -6.8227, df = 510.55, p-value = 2.537e-11) #but both assumptions violated so maybe use wilcox
+
+# option 2) Wilcoxon non-parametric test --------------------------------------------------
+
+w3sr <- wilcox.test(ARD3sr$rich ~ ARD3sr$structure)
+# species richness is significantly different between areas with and witout added structure  (W = 134986, p-value = 3.336e-06)
+w3sr
+
+# visualise:  -------------------------------------------------------------
+
+#data
+
+ARD3sr_sum <- ARD3sr %>% 
+  group_by(structure) %>% 
+  summarize(rich.mean = mean(rich), rich.sd = sd(rich)) %>%
+  mutate(rich.se = rich.sd/sqrt(1536))
+
+ggplot() +
+  geom_col(data = ARD3sr_sum,
+           aes(x = structure,
+               y = rich.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3sr_sum,
+                aes(x = structure,
+                    ymin = rich.mean+rich.se,
+                    ymax = rich.mean-rich.se),
+                width = 0.3) +
+  ggtitle("just data - overall rich (0-3")
+
+
+# 2b) STRUCTURE VS NO STRUCTURE * BACKGROUND COMPLEXITY --------------------------------------------
 
 # uneven sample size, consider kruskall wallis test
 
@@ -444,7 +785,7 @@ options(contrasts=c("contr.sum","contr.poly"))
 
 
 
-# 3) COMPOSITION ----------------------------------------------------------
+# 3B) COMPOSITION * BACKGROUND COMPLEXITY ----------------------------------------------------------
  ______________________________________________________________
 
 # A. RELATIVE RECRUITMENT RATE -----------------------------------------------------
@@ -2266,7 +2607,7 @@ car::Anova(glmm.gam)
 testDispersion(glmm.gam1)
 # p > 0.05, not overdispersed, p-value = 0.544
 
-simoutglmm.gam1 <- simulateResiduals(fittedModel = glmm.gam1, plot = T) #plots scaled resid
+simoutglmm.gam1 <- simulateResiduals(fittedModel = glmm.gam1, plot = T)#plots scaled resid
 residuals(simoutglmm.gam1)
 plot(simoutglmm.gam1) # qq looks like the deviation from uniformity is significant :S
 
