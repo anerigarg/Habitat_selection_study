@@ -1,0 +1,256 @@
+survey_number,month,day,year,date,plot,visit,transect_ID,surveyor,cloud_cover(%),current,wind_speed,wind_direction,start_time,end_time,survey_elapsed_time,survey_type
+1,June,2,2019,02-Jun-19,LS,0,a,Kelsey,10,L,7,S,10:57,NA,NA,baseline BFC
+2,June,2,2019,02-Jun-19,LS,0,b,Taylor,10,L,7,S,NA,NA,NA,baseline BFC
+3,June,2,2019,02-Jun-19,LS,0,c,Aneri,10,L,7,S,10:57,NA,NA,baseline BFC
+4,June,2,2019,02-Jun-19,LS,0,a,Kelsey,10,L,7,S,12:33,13:13,0:40,baseline recruit
+5,June,2,2019,02-Jun-19,LS,0,b,Taylor,10,L,7,S,NA,NA,NA,baseline recruit
+6,June,2,2019,02-Jun-19,LS,0,c,Aneri,10,L,7,S,10:57,NA,NA,baseline recruit
+7,June,2,2019,02-Jun-19,HS,0,a,Kelsey,10,L,7,S,14:30,14:42,0:12,baseline BFC
+8,June,2,2019,02-Jun-19,HS,0,b,Taylor,10,L,7,S,NA,NA,NA,baseline BFC
+9,June,2,2019,02-Jun-19,HS,0,c,Aneri,10,L,7,S,13:34,NA,NA,baseline BFC
+10,June,2,2019,02-Jun-19,HS,0,a,Kelsey,10,L,7,S,14:30,14:42,0:12,baseline recruit
+11,June,2,2019,02-Jun-19,HS,0,b,Taylor,10,L,7,S,NA,NA,NA,baseline recruit
+12,June,2,2019,02-Jun-19,HS,0,c,Aneri,10,L,7,S,13:34,NA,NA,baseline recruit
+13,June,3,2019,03-Jun-19,LN,0,a,Noelle,25,L,5,S,12:20,12:39,0:19,baseline recruit
+14,June,3,2019,03-Jun-19,LN,0,a,Noelle,25,L,5,S,NA,NA,NA,baseline BFC
+15,June,3,2019,03-Jun-19,LN,0,b,Kelsey,25,L,5,S,12:21,12:58,0:37,baseline recruit
+16,June,3,2019,03-Jun-19,LN,0,b,Kelsey,25,L,5,S,12:21,12:21,0:00,baseline BFC
+17,June,3,2019,03-Jun-19,LN,0,c,Noelle,25,L,5,S,12:59,13:27,0:28,baseline recruit
+18,June,3,2019,03-Jun-19,LN,0,c,Noelle,25,L,5,S,NA,NA,NA,baseline BFC
+19,June,3,2019,03-Jun-19,HN,0,a,Kelsey/Noelle,25,L,5,S,14:01,14:14,0:13,baseline recruit
+20,June,3,2019,03-Jun-19,HN,0,a,Kelsey/Noelle,25,L,5,S,14:01,14:14,0:13,baseline BFC
+21,June,3,2019,03-Jun-19,HN,0,b,Kelsey,25,L,5,S,13:33,13:56,0:23,baseline recruit
+22,June,3,2019,03-Jun-19,HN,0,b,Kelsey,25,L,5,S,13:33,13:56,0:23,baseline BFC
+23,June,3,2019,03-Jun-19,HN,0,c,Noelle,25,L,5,S,13:33,13:56,0:23,baseline recruit
+24,June,3,2019,03-Jun-19,HN,0,c,Noelle,25,L,5,S,NA,NA,NA,baseline BFC
+25,June,4,2019,04-Jun-19,LS,1,a,Taylor,NA,NA,NA,NA,NA,NA,NA,recruit
+26,June,4,2019,04-Jun-19,LS,1,b,Noelle,NA,NA,NA,NA,10:40,11:00,0:20,recruit
+27,June,4,2019,04-Jun-19,LS,1,c,Kelsey,25,L,5,S,10:40,10:59,0:19,recruit
+28,June,4,2019,04-Jun-19,HS,1,a,Taylor,NA,NA,NA,NA,,,0:00,recruit
+29,June,4,2019,04-Jun-19,HS,1,b,Noelle,NA,NA,NA,NA,11:19,11:38,0:19,recruit
+30,June,4,2019,04-Jun-19,HS,1,c,Noelle,NA,NA,NA,NA,,,0:00,recruit
+31,June,5,2019,05-Jun-19,LS,2,a,Kelsey,10,M,7,SE,10:51,11:09,0:18,recruit
+32,June,5,2019,05-Jun-19,LS,2,b,Taylor,20,L/M,7,SE,,,0:00,recruit
+33,June,5,2019,05-Jun-19,LS,2,c,Aneri,10,M,7,SE,10:50,11:09,0:19,recruit
+34,June,5,2019,05-Jun-19,HS,2,a,Kelsey,10,M,7,SE,11:16,11:34,0:18,recruit
+35,June,5,2019,05-Jun-19,HS,2,b,Taylor,,L/M,7,SE,,,0:00,recruit
+36,June,5,2019,05-Jun-19,HS,2,c,Aneri,10,M,7,SE,11:14,11:31,0:17,recruit
+37,June,5,2019,05-Jun-19,LN,1,a,Kelsey,10,M,7,SE,10:27,10:44,0:17,recruit
+38,June,5,2019,05-Jun-19,LN,1,b,Taylor,,L/M,7,SE,,,0:00,recruit
+39,June,5,2019,05-Jun-19,LN,1,c,Aneri,10,M,7,SE,10:26,10:43,0:17,recruit
+40,June,5,2019,05-Jun-19,HN,1,a,Kelsey,10,M,7,SE,11:43,12:01,0:18,recruit
+41,June,5,2019,05-Jun-19,HN,1,b,Taylor,20,L/M,7,SE,,,0:00,recruit
+42,June,5,2019,05-Jun-19,HN,1,c,Aneri,10,M,7,SE,11:41,11:59,0:18,recruit
+43,June,6,2019,06-Jun-19,LS,3,a,Aneri,NA,NA,NA,NA,2:42,2:58,0:16,recruit
+44,June,6,2019,06-Jun-19,LS,3,b,Noelle,NA,NA,NA,NA,14:42,14:59,0:17,recruit
+45,June,6,2019,06-Jun-19,LS,3,c,Taylor,50,L,NA,NA,14:17,14:36,0:19,recruit
+46,June,6,2019,06-Jun-19,HS,3,a,Aneri,NA,NA,NA,NA,14:17,14:32,0:15,recruit 
+47,June,6,2019,06-Jun-19,HS,3,b,Noelle,NA,NA,NA,NA,14:18,14:33,0:15,recruit
+48,June,6,2019,06-Jun-19,HS,3,c,Taylor,50,L,NA,NA,14:42,15:03,0:21,recruit
+49,June,6,2019,06-Jun-19,LN,2,a,Aneri,50,L,NA,NA,13:51,14:11,0:20,recruit
+50,June,6,2019,06-Jun-19,LN,2,b,Noelle,NA,NA,NA,NA,13:52,14:11,0:19,recruit
+51,June,6,2019,06-Jun-19,LN,2,c,Taylor,50,L,NA,NA,13:51,14:08,0:17,recruit
+52,June,6,2019,06-Jun-19,HN,2,a,Aneri,50,L,NA,NA,NA,NA,NA,recruit
+53,June,6,2019,06-Jun-19,HN,2,b,Noelle,NA,NA,NA,NA,13:26,13:48,0:22,recruit
+54,June,6,2019,06-Jun-19,HN,2,c,Taylor,50,L,NA,NA,13:25,13:43,0:18,recruit
+55,June,7,2019,07-Jun-19,LS,4,a,Taylor,95,M,NA,NA,11:12,11:30,0:18,recruit
+56,June,7,2019,07-Jun-19,LS,4,b,Aneri,70,M,8,S,11:12,11:33,0:21,recruit
+57,June,7,2019,07-Jun-19,LS,4,c,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+58,June,7,2019,07-Jun-19,HS,4,a,Taylor,95,M,NA,NA,NA,NA,NA,recruit
+59,June,7,2019,07-Jun-19,HS,4,b,Aneri,70,M,8,S,9:44,10:05,0:21,recruit
+60,June,7,2019,07-Jun-19,HS,4,c,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+61,June,7,2019,07-Jun-19,LN,3,a,Taylor,95,M,NA,NA,NA,NA,NA,recruit
+62,June,7,2019,07-Jun-19,LN,3,b,Aneri,70,M,8,S,10:45,11:04,0:19,recruit
+63,June,7,2019,07-Jun-19,LN,3,c,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+64,June,7,2019,07-Jun-19,HN,3,a,Taylor,95,M,NA,NA,NA,NA,NA,recruit
+65,June,7,2019,07-Jun-19,HN,3,b,Aneri,70,M,8,S,10:15,10:34,0:19,recruit
+66,June,7,2019,07-Jun-19,HN,3,c,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+67,June,9,2019,09-Jun-19,LN,4,a,Aneri,90,L,8,S,11:10,11:27,0:17,recruit
+68,June,9,2019,09-Jun-19,LN,4,b,Taylor,95,M,11,SE,11:10,11:30,0:20,recruit
+69,June,9,2019,09-Jun-19,LN,4,c,Kelsey,100,M,12,SE,11:12,11:29,0:17,recruit
+70,June,9,2019,09-Jun-19,LS,5,a,Aneri,90,L,8,S,11:34,11:51,0:17,recruit
+71,June,9,2019,09-Jun-19,LS,5,b,Taylor,95,M,11,SE,11:34,11:52,0:18,recruit
+72,June,9,2019,09-Jun-19,LS,5,c,Kelsey,100,M,12,SE,11:12,11:29,0:17,recruit
+73,June,9,2019,09-Jun-19,HS,5,a,Aneri,90,L,8,S,12:01,12:18,0:17,recruit
+74,June,9,2019,09-Jun-19,HS,5,b,Taylor,95,M,12,SE,12:02,12:17,0:15,recruit
+75,June,9,2019,09-Jun-19,HS,5,c,Kelsey,100,M,12,SE,11:12,11:29,0:17,recruit
+76,June,11,2019,11-Jun-19,LN,5,a,Kelsey,10,L,7,SE,13:12,13:31,0:19,recruit
+77,June,11,2019,11-Jun-19,LN,5,b,Aneri,10,L,2,S,13:10,13:28,0:18,recruit
+78,June,11,2019,11-Jun-19,LN,5,c,Taylor,10,L,NA,NA,13:10,13:33,0:23,recruit
+79,June,11,2019,11-Jun-19,LS,6,a,Kelsey,10,L,7,SE,11:22,11:45,0:23,recruit
+80,June,11,2019,11-Jun-19,LS,6,b,Aneri,10,L,2,S,11:21,11:42,0:21,recruit
+81,June,11,2019,11-Jun-19,LS,6,c,Taylor,10,L,NA,NA,11:21,11:42,0:21,recruit
+82,June,11,2019,11-Jun-19,HS,6,a,Kelsey,10,L,7,SE,12:02,12:23,0:21,recruit
+83,June,11,2019,11-Jun-19,HS,6,b,Aneri,10,L,2,S,12:01,12:19,0:18,recruit
+84,June,11,2019,11-Jun-19,HS,6,c,Taylor,10,L,NA,NA,12:00,12:19,0:19,recruit
+85,June,11,2019,11-Jun-19,HN,4,a,Kelsey,10,L,7,SE,12:31,12:55,0:24,recruit
+86,June,11,2019,11-Jun-19,HN,4,b,Aneri,10,L,2,S,12:30,12:48,0:18,recruit
+87,June,11,2019,11-Jun-19,HN,4,c,Taylor,10,L,NA,NA,12:31,12:49,0:18,recruit
+88,June,13,2019,13-Jun-19,LN,6,a,Aneri,10,L,2,S,9:43,10:05,0:22,recruit
+89,June,13,2019,13-Jun-19,LN,6,b,Kelsey,10,L,5,S,9:44,10:04,0:20,recruit
+90,June,13,2019,13-Jun-19,LN,6,c,Taylor,10,L,5,S,9:45,10:09,0:24,recruit
+91,June,13,2019,13-Jun-19,LS,7,a,Aneri,10,L,2,S,10:10,10:30,0:20,recruit
+92,June,13,2019,13-Jun-19,LS,7,b,Kelsey,10,L,5,S,10:12,10:33,0:21,recruit
+93,June,13,2019,13-Jun-19,LS,7,c,Taylor,10,L,5,S,10:12,10:28,0:16,recruit
+94,June,13,2019,13-Jun-19,HS,6,a,Aneri,10,L,2,S,10:36,10:51,0:15,recruit
+95,June,13,2019,13-Jun-19,HS,6,b,Kelsey,10,L,5,S,10:37,10:56,0:19,recruit
+96,June,13,2019,13-Jun-19,HS,6,c,Taylor,10,L,5,S,10:35,10:52,0:17,recruit
+97,June,13,2019,13-Jun-19,HN,5,a,Aneri,10,L,2,S,11:06,11:24,0:18,recruit
+98,June,13,2019,13-Jun-19,HN,5,b,Kelsey,10,L,5,S,11:03,11:28,0:25,recruit
+99,June,13,2019,13-Jun-19,HN,5,c,Taylor,10,L,5,S,11:06,11:24,0:18,recruit
+100,June,15,2019,15-Jun-19,LN,7,a,Kelsey,80,L,5,SE,11:11,11:28,0:17,recruit
+101,June,15,2019,15-Jun-19,LN,7,b,Taylor,NA,L,5,S,11:08,11:29,0:21,recruit
+102,June,15,2019,15-Jun-19,LN,7,c,Aneri,70,M,5,SE,11:09,11:27,0:18,recruit
+103,June,15,2019,15-Jun-19,LS,8,a,Kelsey,80,M,5,SE,11:31,11:52,0:21,recruit
+104,June,15,2019,15-Jun-19,LS,8,b,Taylor,NA,L,5,S,11:32,11:52,0:20,recruit
+105,June,15,2019,15-Jun-19,LS,8,c,Aneri,70,M,5,SE,11:33,11:55,0:22,recruit
+106,June,15,2019,15-Jun-19,HS,7,a,Aneri,80,M,5,SE,12:20,12:36,0:16,recruit
+107,June,15,2019,15-Jun-19,HS,7,b,Taylor,NA,L,5,S,NA,12:23,NA,recruit
+108,June,15,2019,15-Jun-19,HS,7,c,Aneri,70,M,5,SE,12:01,12:17,0:16,recruit
+109,June,15,2019,15-Jun-19,HN,6,a,Kelsey,80,M,5,SE,12:45,13:05,0:20,recruit
+110,June,15,2019,15-Jun-19,HN,6,b,Taylor,NA,L,5,S,12:31,12:51,0:20,recruit
+111,June,15,2019,15-Jun-19,HN,6,c,Aneri,70,M,5,SE,11:09,11:27,0:18,recruit
+112,June,20,2019,20-Jun-19,LN,8,a,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+113,June,20,2019,20-Jun-19,LN,8,b,Aneri,5,M,5,SE,14:19,14:36,0:17,recruit
+114,June,20,2019,20-Jun-19,LN,8,c,Kelsey,20,M,5,SE,14:21,14:41,0:20,recruit
+115,June,20,2019,20-Jun-19,LS,9,a,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+116,June,20,2019,20-Jun-19,LS,9,b,Aneri,5,M,5,SE,14:19,14:36,0:17,recruit
+117,June,20,2019,20-Jun-19,LS,9,c,Kelsey,20,M,5,SE,13:48,14:09,0:21,recruit
+118,June,20,2019,20-Jun-19,HS,8,a,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+119,June,20,2019,20-Jun-19,HS,8,b,Aneri,5,M,5,SE,13:20,13:38,0:18,recruit
+120,June,20,2019,20-Jun-19,HS,8,c,Kelsey,20,M,5,SE,13:21,13:42,0:21,recruit
+121,June,20,2019,20-Jun-19,HN,7,a,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+122,June,20,2019,20-Jun-19,HN,7,b,Aneri,5,M,5,SE,12:56,13:15,0:19,recruit
+123,June,20,2019,20-Jun-19,HN,7,c,Kelsey,20,M,5,SE,12:57,13:17,0:20,recruit
+124,June,25,2019,25-Jun-19,LN,9,a,Kelsey,5,L,NA,NA,12:35,12:59,0:24,recruit
+125,June,25,2019,25-Jun-19,LN,9,b,Noelle,5,L,NA,NA,12:34,12:54,0:20,recruit
+126,June,25,2019,25-Jun-19,LN,9,c,Aneri,5,L,2,S,12:32,12:54,0:22,recruit
+127,June,25,2019,25-Jun-19,LS,10,a,Kelsey,5,L,NA,NA,13:25,13:45,0:20,recruit
+128,June,25,2019,25-Jun-19,LS,10,b,Noelle,5,L,NA,NA,12:59,13:19,0:20,recruit
+129,June,25,2019,25-Jun-19,LS,10,c,Aneri,5,L,2,S,12:57,13:20,0:23,recruit
+130,June,25,2019,25-Jun-19,HS,9,a,Kelsey,5,L,NA,NA,13:25,13:35,0:10,recruit
+131,June,25,2019,25-Jun-19,HS,9,b,Noelle,0,L,NA,NA,13:25,13:43,0:18,recruit
+132,June,25,2019,25-Jun-19,HS,9,c,Aneri,5,L,2,S,13:23,13:39,0:16,recruit
+133,June,25,2019,25-Jun-19,HN,8,a,Kelsey,5,L,NA,NA,13:00,13:20,0:20,recruit
+134,June,25,2019,25-Jun-19,HN,8,b,Noelle,5,L,NA,NA,13:50,NA,NA,recruit
+135,June,25,2019,25-Jun-19,HN,8,c,Aneri,5,L,2,S,13:49,14:05,0:16,recruit
+136,June,28,2019,28-Jun-19,LN,10,a,Aneri,70,L,10,SE,11:42,11:58,0:16,recruit
+137,June,28,2019,28-Jun-19,LN,10,b,Kelsey,80,M,10,SE,11:44,12:04,0:20,recruit
+138,June,28,2019,28-Jun-19,LN,10,c,Taylor ,80,L,10,E,11:44,12:05,0:21,recruit
+139,June,28,2019,28-Jun-19,LS,11,a,Aneri,70,L,10,SE,11:01,11:19,0:18,recruit
+140,June,28,2019,28-Jun-19,LS,11,b,Kelsey,80,M,10,SE,11:03,11:25,0:22,recruit
+141,June,28,2019,28-Jun-19,LS,11,c,Taylor,80,L,10,E,11:03,11:22,0:19,recruit
+142,June,28,2019,28-Jun-19,HS,10,a,Aneri,70,L,10,SE,10:13,10:30,0:17,recruit
+143,June,28,2019,28-Jun-19,HS,10,b,Kelsey,80,M,10,SE,10:15,10:35,0:20,recruit
+144,June,28,2019,28-Jun-19,HS,10,c,Taylor,80,L,10,E,10:15,10:32,0:17,recruit
+145,June,28,2019,28-Jun-19,HN,9,a,Aneri,70,L,10,SE,9:44,10:01,0:17,recruit
+146,June,28,2019,28-Jun-19,HN,9,b,Kelsey,80,M,10,SE,9:45,10:03,0:18,recruit
+147,June,28,2019,28-Jun-19,HN,9,c,Taylor,80,L,10,E,9:45,10:01,0:16,recruit
+148,July,2,2019,02-Jul-19,LN,11,a,Aneri,15,L,6,N,11:17,11:51,0:34,recruit
+149,July,2,2019,02-Jul-19,LN,11,b,Taylor,20,L,6,N,11:17,11:54,0:37,recruit
+150,July,2,2019,02-Jul-19,LN,11,c,Kelsey,25,L,6,N,11:14,11:48,0:34,recruit
+151,July,2,2019,02-Jul-19,LS,12,a,Aneri,15,L,6,N,13:30,13:57,0:27,recruit
+152,July,2,2019,02-Jul-19,LS,12,b,Taylor,20,L,6,N,13:32,14:02,0:30,recruit
+153,July,2,2019,02-Jul-19,LS,12,c,Kelsey,25,L,6,N,13:31,14:01,0:30,recruit
+154,July,2,2019,02-Jul-19,HS,11,a,Aneri,15,L,6,N,12:42,13:12,0:30,recruit
+155,July,2,2019,02-Jul-19,HS,11,b,Taylor,20,L,6,N,12:44,13:13,0:29,recruit
+156,July,2,2019,02-Jul-19,HS,11,c,Kelsey,25,L,6,N,12:43,13:11,0:28,recruit
+157,July,2,2019,02-Jul-19,HN,10,a,Aneri,15,L,6,N,12:01,12:31,0:30,recruit
+158,July,2,2019,02-Jul-19,HN,10,b,Taylor,20,L,6,N,12:01,12:37,0:36,recruit
+159,July,2,2019,02-Jul-19,HN,10,c,Kelsey,25,L,6,N,12:01,12:29,0:28,recruit
+160,July,2,2019,02-Jul-19,LN,11,a,Aneri,15,L,6,N,11:17,11:51,0:34,BFC
+161,July,2,2019,02-Jul-19,LN,11,b,Taylor,20,L,6,N,11:17,11:54,0:37,BFC
+162,July,2,2019,02-Jul-19,LN,11,c,Kelsey,25,L,6,N,11:14,11:48,0:34,BFC
+163,July,2,2019,02-Jul-19,LS,12,a,Aneri,15,L,6,N,13:30,13:57,0:27,BFC
+164,July,2,2019,02-Jul-19,LS,12,b,Taylor,20,L,6,N,13:32,14:02,0:30,BFC
+165,July,2,2019,02-Jul-19,LS,12,c,Kelsey,25,L,6,N,13:31,14:01,0:30,BFC
+166,July,2,2019,02-Jul-19,HS,11,a,Aneri,15,L,6,N,12:42,13:12,0:30,BFC
+167,July,2,2019,02-Jul-19,HS,11,b,Taylor,20,L,6,N,12:44,13:13,0:29,BFC
+168,July,2,2019,02-Jul-19,HS,11,c,Kelsey,25,L,6,N,12:43,13:11,0:28,BFC
+169,July,2,2019,02-Jul-19,HN,10,a,Aneri,15,L,6,N,12:01,12:31,0:30,BFC
+170,July,2,2019,02-Jul-19,HN,10,b,Taylor,20,L,6,N,12:01,12:37,0:36,BFC
+171,July,2,2019,02-Jul-19,HN,10,c,Kelsey,25,L,6,N,12:01,12:29,0:28,BFC
+172,July,5,2019,05-Jul-19,LN,12,a,Kelsey,80,L,10,SE,10:52,11:10,0:18,recruit
+173,July,5,2019,05-Jul-19,LN,12,b,Aneri,30,L,10,SE,10:50,11:09,0:19,recruit
+174,July,5,2019,05-Jul-19,LN,12,c,Taylor,70,M,10,SE,10:52,11:15,0:23,recruit
+175,July,5,2019,05-Jul-19,LS,13,a,Kelsey,80,L,10,SE,10:27,10:45,0:18,recruit
+176,July,5,2019,05-Jul-19,LS,13,b,Aneri,30,L,10,SE,10:25,10:46,0:21,recruit
+177,July,5,2019,05-Jul-19,LS,13,c,Taylor,70,M,10,SE,10:28,10:47,0:19,recruit
+178,July,5,2019,05-Jul-19,HS,12,a,Kelsey,80,L,10,SE,11:47,12:05,0:18,recruit
+179,July,5,2019,05-Jul-19,HS,12,b,Aneri,30,L,10,SE,11:45,12:03,0:18,recruit
+180,July,5,2019,05-Jul-19,HS,12,c,Taylor,70,M,10,SE,11:47,12:11,0:24,recruit
+181,July,5,2019,05-Jul-19,HN,11,a,Kelsey,80,L,10,SE,11:22,11:40,0:18,recruit
+182,July,5,2019,05-Jul-19,HN,11,b,Aneri,30,L,10,SE,11:20,11:38,0:18,recruit
+183,July,5,2019,05-Jul-19,HN,11,c,Taylor,70,M,10,SE,11:22,11:43,0:21,recruit
+184,July,9,2019,09-Jul-19,LN,13,a,Taylor,80,L,8,SW,14:02,14:24,0:22,recruit
+185,July,9,2019,09-Jul-19,LN,13,b,Kelsey,80,L,9,SW,14:04,14:22,0:18,recruit
+186,July,9,2019,09-Jul-19,LN,13,c,Aneri,80,L,8,SW,14:02,14:22,0:20,recruit
+187,July,9,2019,09-Jul-19,LS,14,a,Taylor,80,L,8,SW,14:25,14:43,0:18,recruit
+188,July,9,2019,09-Jul-19,LS,14,b,Kelsey,80,L,9,SW,14:26,14:42,0:16,recruit
+189,July,9,2019,09-Jul-19,LS,14,c,Aneri,80,L,8,SW,14:24,14:43,0:19,recruit
+190,July,9,2019,09-Jul-19,HS,13,a,Taylor,80,L,9,SW,14:49,15:09,0:20,recruit
+191,July,9,2019,09-Jul-19,HS,13,b,Kelsey,80,L,9,SW,14:49,15:07,0:18,recruit
+192,July,9,2019,09-Jul-19,HS,13,c,Aneri,80,L,8,SW,14:47,15:05,0:18,recruit
+193,July,9,2019,09-Jul-19,HN,12,a,Taylor,80,L,9,SW,15:14,15:33,0:19,recruit
+194,July,9,2019,09-Jul-19,HN,12,b,Kelsey,80,L,9,SW,15:26,15:48,0:22,recruit
+195,July,9,2019,09-Jul-19,HN,12,c,Aneri,80,L,8,SW,15:13,15:30,0:17,recruit
+196,July,15,2019,15-Jul-19,LN,14,a,Kelsey,42,H,13,E,15:07,15:26,0:19,recruit
+197,July,15,2019,15-Jul-19,LN,14,b,Aneri,50,M,14,E,15:05,15:25,0:20,recruit
+198,July,15,2019,15-Jul-19,LN,14,c,Taylor ,50,M,14,E,15:05,15:26,0:21,recruit
+199,July,15,2019,15-Jul-19,LS,15,a,Kelsey,42,H,13,E,15:34,16:03,0:29,recruit
+200,July,15,2019,15-Jul-19,LS,15,b,Aneri,50,M,14,E,15:32,15:54,0:22,recruit
+201,July,15,2019,15-Jul-19,LS,15,c,Taylor,50,M,14,E,15:32,15:53,0:21,recruit
+202,July,15,2019,15-Jul-19,HS,14,a,Kelsey,42,H,13,E,16:10,16:26,0:16,recruit
+203,July,15,2019,15-Jul-19,HS,14,b,Aneri,50,M,14,E,16:08,16:24,0:16,recruit
+204,July,15,2019,15-Jul-19,HS,14,c,Taylor,50,M,14,E,16:07,16:25,0:18,recruit
+205,July,15,2019,15-Jul-19,HN,13,a,Kelsey,42,H,13,E,16:32,16:48,0:16,recruit
+206,July,15,2019,15-Jul-19,HN,13,b,Aneri,50,M,14,E,16:31,16:45,0:14,recruit
+207,July,15,2019,15-Jul-19,HN,13,c,Taylor,50,M,14,E,16:31,16:48,0:17,recruit
+208,July,20,2019,20-Jul-19,LN,15,a,Aneri,40,M,11,E,15:42,16:00,0:18,recruit
+209,July,20,2019,20-Jul-19,LN,15,b,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+210,July,20,2019,20-Jul-19,LN,15,c,Kelsey,30,H,11,E,15:44,16:01,0:17,recruit
+211,July,20,2019,20-Jul-19,LS,16,a,Aneri,40,M,11,E,16:01,16:18,0:17,recruit
+212,July,20,2019,20-Jul-19,LS,16,b,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+213,July,20,2019,20-Jul-19,LS,16,c,Kelsey,30,H,11,E,16:04,16:20,0:16,recruit
+214,July,20,2019,20-Jul-19,HS,15,a,Aneri,40,M,11,E,14:58,15:15,0:17,recruit
+215,July,20,2019,20-Jul-19,HS,15,b,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+216,July,20,2019,20-Jul-19,HS,15,c,Kelsey,30,H,11,E,15:00,15:17,0:17,recruit
+217,July,20,2019,20-Jul-19,HN,14,a,Aneri,40,M,11,E,15:20,15:38,0:18,recruit
+218,July,20,2019,20-Jul-19,HN,14,b,Noelle,NA,NA,NA,NA,NA,NA,NA,recruit
+219,July,20,2019,20-Jul-19,HN,14,c,Kelsey,30,H,11,E,15:24,15:41,0:17,recruit
+220,July,25,2019,25-Jul-19,LN,16,a,Kelsey,20,L,7,S,11:13,11:29,0:16,recruit
+221,July,25,2019,25-Jul-19,LN,16,b,Taylor,50,L,7,SW,11:13,11:31,0:18,recruit
+222,July,25,2019,25-Jul-19,LN,16,c,Aneri, ,M,7,S,11:10,11:26,0:16,recruit
+223,July,25,2019,25-Jul-19,LS,17,a,Kelsey,20,L,7,S,11:33,11:51,0:18,recruit
+224,July,25,2019,25-Jul-19,LS,17,b,Taylor,50,L,7,SW,11:37,11:54,0:17,recruit
+225,July,25,2019,25-Jul-19,LS,17,c,Aneri,30,M,7,S,11:30,11:49,0:19,recruit
+226,July,25,2019,25-Jul-19,HS,16,a,Kelsey,20,L,7,S,11:57,12:13,0:16,recruit
+227,July,25,2019,25-Jul-19,HS,16,b,Taylor,50,L,7,SW,11:57,12:16,0:19,recruit
+228,July,25,2019,25-Jul-19,HS,16,c,Aneri,30,M,7,S,11:54,12:11,0:17,recruit
+229,July,25,2019,25-Jul-19,HN,15,a,Kelsey,20,L,7,S,12:23,12:40,0:17,recruit
+230,July,25,2019,25-Jul-19,HN,15,b,Noelle,50,L,7,SW,12:22,12:39,0:17,recruit
+231,July,25,2019,25-Jul-19,HN,15,c,Aneri,30,M,7,S,12:21,12:37,0:16,recruit
+232,July,28,2019,28-Jul-19,LN,17,a,Noelle,10,L,3,SE,10:14,10:44,0:30,recruit
+233,July,28,2019,28-Jul-19,LN,17,b,Aneri,5,L,3,SE,10:12,10:40,0:28,recruit
+234,July,28,2019,28-Jul-19,LN,17,c,Kelsey,10,L,3,SE,10:15,10:43,0:28,recruit
+235,July,28,2019,28-Jul-19,LS,18,a,Noelle,10,L,3,SE,10:46,11:12,0:26,recruit
+236,July,28,2019,28-Jul-19,LS,18,b,Aneri,5,L,3,SE,10:42,11:14,0:32,recruit
+237,July,28,2019,28-Jul-19,LS,18,c,Kelsey,10,L,3,SE,10:45,11:20,0:35,recruit
+238,July,28,2019,28-Jul-19,HS,17,a,Noelle,10,L,3,SE,11:25,11:57,0:32,recruit
+239,July,28,2019,28-Jul-19,HS,17,b,Aneri,5,L,3,SE,11:23,11:58,0:35,recruit
+240,July,28,2019,28-Jul-19,HS,17,c,Kelsey,10,L,3,SE,11:30,12:00,0:30,recruit
+241,July,28,2019,28-Jul-19,HN,16,a,Noelle,10,L,3,SE,12:06,12:32,0:26,recruit
+242,July,28,2019,28-Jul-19,HN,16,b,Aneri,5,L,3,SE,12:04,12:31,0:27,recruit
+243,July,28,2019,28-Jul-19,HN,16,c,Kelsey,10,L,3,SE,12:07,12:36,0:29,recruit
+244,July,28,2019,28-Jul-19,LN,17,a,Noelle,NA,NA,NA,NA,NA,NA,NA,BFC
+245,July,28,2019,28-Jul-19,LN,17,b,Aneri,5,L,3,SE,10:12,,#VALUE!,BFC
+246,July,28,2019,28-Jul-19,LN,17,c,Kelsey,10,L,3,SE,10:15,10:43,0:28,BFC
+247,July,28,2019,28-Jul-19,LS,18,a,Noelle,NA,NA,NA,NA,NA,NA,NA,BFC
+248,July,28,2019,28-Jul-19,LS,18,b,Aneri,5,L,3,SE,10:42,11:14,0:32,BFC
+249,July,28,2019,28-Jul-19,LS,18,c,Kelsey,10,L,3,SE,10:45,11:20,0:35,BFC
+250,July,28,2019,28-Jul-19,HS,17,a,Noelle,NA,NA,NA,NA,NA,NA,NA,BFC
+251,July,28,2019,28-Jul-19,HS,17,b,Aneri,5,L,3,SE,11:23,11:58,0:35,BFC
+252,July,28,2019,28-Jul-19,HS,17,c,Kelsey,10,L,3,SE,11:30,12:00,0:30,BFC
+253,July,28,2019,28-Jul-19,HN,16,a,Noelle,NA,NA,NA,NA,NA,NA,NA,BFC
+254,July,28,2019,28-Jul-19,HN,16,b,Aneri,5,L,3,SE,12:04,12:31,0:27,BFC
+255,July,28,2019,28-Jul-19,HN,16,c,Kelsey,10,L,3,SE,12:07,12:36,0:29,BFC
