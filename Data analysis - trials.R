@@ -685,6 +685,7 @@ ggplot() +
 
 
 
+
 # D. DIVERSITY METRICS ----------------------------------------------------
 # option 1) t.test --------------------------------------------------------
 
@@ -1018,6 +1019,25 @@ ggplot() +
 facet_grid(.~C)
 
 
+ARD3scr_sum <- ARD3scr %>% 
+  group_by(structure,C) %>% 
+  summarize(rich.mean = mean(rich), rich.sd = sd(rich)) %>%
+  mutate(rich.se = rich.sd/sqrt(1536))
+
+ggplot() +
+  geom_col(data = ARD3scr_sum,
+           aes(x = structure,
+               y = rich.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3scr_sum,
+                aes(x = structure,
+                    ymin = rich.mean+rich.se,
+                    ymax = rich.mean-rich.se),
+                width = 0.3) +
+  ggtitle("just data - overall rich (0-3")+
+  facet_grid(.~C)
 
 # B. FINAL DENSITY ---------------------------------------------------------------------
 
@@ -1263,6 +1283,7 @@ ggplot() +
 
 
 
+
 # C. OVERALL DENSITY ------------------------------------------------------
 ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
   dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
@@ -1280,10 +1301,82 @@ ARD3sc <- ARD_3 %>%
   mutate(density1 = sqrt(density)) %>% 
   mutate(density2 = log(density)) %>% 
   mutate(density3 = Math.cbrt(density))
-range(ARD3sc$density)
-hist(ARD3sc$density) #prob neg bin
-# option 1) glmm - poisson ------------------------------------------------
 
+range(ARD3sc$density)
+hist(ARD3sc$density) #prob neg bin2
+#may want to consider removing outliers above 20? 
+
+describeBy(ARD3sc, group=list(ARD3sc$structure, ARD3sc$C))
+# Low no structure: 1.48  (sd= 2.14)
+# low yes structure: 2.93 , sd=  3.58
+# high no structure:  2.76, sd=   3.42
+# high yes structure: 2.24 , sd =  2.90
+
+# option 1) glmm - neg binom2------------------------------------------------
+
+
+glm.scn23 <- glm.nb(density~structure*C, data = ARD3sc)
+glmm.scn23 <- glmmTMB(density~structure*C + (1|plot), family = nbinom2(), data = ARD3sc)
+glmm.sc1n23 <- glmmTMB(density~structure*C + (1|visit), family = nbinom2(), data = ARD3sc)
+glmm.sc2n23 <- glmmTMB(density~structure*C + (1|visit) + (1|plot), family = nbinom2(), data = ARD3sc)
+
+AIC(glm.scn23, glmm.scn23, glmm.sc1n23,glmm.sc2n2) # glmm.sc1n2 (visit as re)
+car::Anova(glmm.sc1n23)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: density
+# Chisq Df Pr(>Chisq)    
+# structure    5.7602  1    0.01639 *  
+#   C            4.2341  1    0.03962 *  
+#   structure:C 29.7166  1      5e-08 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glmm.sc1n23)
+# fine,p-value = 0.456
+
+simoutglm.scn23 <- simulateResiduals(fittedModel = glmm.sc1n23, plot = T)# this looks good!
+residuals(simoutglm.scn23)
+plot(simoutglm.scn2) 
+
+plotResiduals(simoutglm.scn2, ARD4sc$structure)
+plotResiduals(simoutglm.scn2, ARD4sc$C) 
+hist(simoutglm.scn23) # looks just fine
+
+#goodness of fit tests
+testResiduals(simoutglm.scn23)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.4672
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers, p-value = 0.62
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,p-value = 0.456
+
+# visualize ---------------------------------------------------------------
+
+
+#data
+
+ARD3sc_sum <- ARD3sc %>% 
+  group_by(structure,C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(1536))
+
+ggplot() +
+  geom_col(data = ARD3sc_sum,
+           aes(x = structure,
+               y = dens.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3sc_sum,
+                aes(x = structure,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("just data - overall density (0-3") +
+  facet_grid(.~C)
 
 
 
@@ -1292,6 +1385,83 @@ hist(ARD3sc$density) #prob neg bin
 
 # D. DIVERSITY METRICS ----------------------------------------------------
 
+
+ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+#checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
+
+ARD3scr <- ARD_3_rich %>% 
+  mutate(structure = ifelse(Tr =="control", "no","yes"))
+
+#check normality: 
+hist(ARD3scr$rich) #that's poisson-y
+
+shapiro.test(ARD3sr$rich) # nope,p-value = p-value < 2.2e-16
+range(ARD3sr$rich) #0 to 7
+
+# homogeneity of variance
+boxplot(rich~plot, data = ARD3scr) #LN seems lower
+boxplot(rich~visit, data = ARD3scr) #less richness in second half?
+boxplot(rich~structure, data = ARD3scr) # looks hetero and higher in yes structre
+boxplot(rich~C, data = ARD3scr)
+
+describeBy(ARD3scr, group=list(ARD3sr$structure, ARD3sr$C)) 
+# low no structure:  0.92  , sd =  0.90
+# low yes structure: 1.64 , sd =  1.41
+# High no structure: 0.98  , sd =  0.81
+# High yes structure: 1.15 ,sd=  1.07
+
+
+# option 1) neg binom2 ----------------------------------------------------
+
+glm.scr <- glm.nb(rich~structure*C, data = ARD3scr)
+glmm.scr <- glmmTMB(rich~structure*C + (1|plot), family = nbinom2(), data = ARD3scr)
+glmm.scr1 <- glmmTMB(rich~structure*C + (1|visit), family = nbinom2(), data = ARD3scr)
+glmm.scr2 <- glmmTMB(rich~structure*C + (1|visit) + (1|plot), family = nbinom2(), data = ARD3scr)
+
+AIC(glm.scr, glmm.scr, glmm.scr1,glmm.scr2) # glmm.scr1 (visit as re)
+car::Anova(glmm.scr1)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: rich
+# Chisq Df Pr(>Chisq)    
+# structure   27.3027  1  1.740e-07 ***
+#   C           43.8930  1  3.468e-11 ***
+#   structure:C  9.2803  1   0.002316 ** 
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glmm.scr1)
+# fine,p-value = 0.92
+
+simoutglm.scr2 <- simulateResiduals(fittedModel = glmm.scr2, plot = T)# this looks good, only the outlier test was sig
+residuals(simoutglm.scr2)
+plot(simoutglm.scr2) 
+
+plotResiduals(simoutglm.scr2, ARD4sc$structure)
+plotResiduals(simoutglm.scr2, ARD4sc$C) 
+hist(simoutglm.scr2) # looks fine, one outlir
+
+#goodness of fit tests
+testResiduals(simoutglm.scr2)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.6884
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers,  p-value = 0.22
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,p-value = 0.984
+
+
+
+# visualize ---------------------------------------------------------------
 
 
 
