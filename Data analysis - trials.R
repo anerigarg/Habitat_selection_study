@@ -1,5 +1,27 @@
 # data analysis - habitat selection
 
+# packages and palletes ---------------------------------------------------
+
+library(viridis)
+library(PNWColors)
+library(tidyverse)
+library(ggplot2)
+library(readr)
+library(openxlsx)
+library(glmmTMB)
+library(DHARMa)
+library(emmeans)
+library(nlme)
+library(lme4)
+
+`%notin%` = negate(`%in%`)
+write.csv(name, "name.csv", row.names = FALSE)
+
+pal <- pnw_palette(6, name = "Starfish", type = "continuous")
+pal1 <- pnw_palette(3, name = "Winter", type = "continuous")
+pal2 <-pnw_palette(3, name = "Anemone", type = "continuous")
+pal3 <-pnw_palette(3, name = "Lake", type = "continuous")
+
 # 1) BACKGROUND COMPLEXITY ---------------------------------------------------
 
 
@@ -86,15 +108,18 @@ ggplot() +
                y = rate.mean,
                group = C,
                fill = C),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrbc_sum,
                 aes(x = C,
                     ymin = rate.mean+rate.se,
                     ymax = rate.mean-rate.se),
                 width = 0.3) +
-  ggtitle("just data")
-  # ylim(-0.4,0.7) +
-  # facet_grid(.~C) 
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Recruitment~rate~(~fish~m^{2}~d^{1}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
 
 
 # still figuring out how to extract predicted values from a t-test:
@@ -131,6 +156,7 @@ ggplot() +
 #   ggtitle("predicted AR1 lmm (outline) over data (colour)") +
 #   # ylim(-0.4,0.7) +
 #   facet_grid(.~C) 
+
 
 
 
@@ -241,13 +267,19 @@ ggplot() +
                y = dens.mean,
                group = C,
                fill = C),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD4bc_sum,
                 aes(x = C,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
-  ggtitle("just data - final density 4-6")
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Final~density~(~fish~m^{2}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
 
 
 
@@ -332,13 +364,21 @@ ggplot() +
                y = dens.mean,
                group = C,
                fill = C),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3bc_sum,
                 aes(x = C,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
-  ggtitle("just data - overall density (0-3")
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Mean~density~(~fish~m^{2}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+
+
 
 
 # D. RICHNESS ----------------------------------------------------
@@ -409,13 +449,20 @@ ggplot() +
                y = rich.mean,
                group = C,
                fill = C),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3bcr_sum,
                 aes(x = C,
                     ymin = rich.mean+rich.se,
                     ymax = rich.mean-rich.se),
                 width = 0.3) +
-  ggtitle("just data - overall rich (0-3")
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Richness~(~number~of~species))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+
 
 
 
@@ -423,6 +470,7 @@ ggplot() +
 
 # uneven sample size, consider taking random sample from "structure" df to compare to
  ______________________________________________________________
+ _____________________________________________________________
 
 # A. RECRUITMENT RATE -----------------------------------------------------
 # option 1) t-test --------------------------------------------------------
@@ -487,15 +535,18 @@ ggplot() +
                y = rate.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrs_sum,
                 aes(x = structure,
                     ymin = rate.mean+rate.se,
                     ymax = rate.mean-rate.se),
                 width = 0.3) +
-  ggtitle("just data, structure vs no structure")
-# ylim(-0.4,0.7) +
-# facet_grid(.~C) 
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Recruitment~rate~(~fish~m^{2}~d^{1}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
 
 
 # still figuring out how to extract predicted values from a t-test:
@@ -532,6 +583,8 @@ ggplot() +
 #   ggtitle("predicted AR1 lmm (outline) over data (colour)") +
 #   # ylim(-0.4,0.7) +
 #   facet_grid(.~C) 
+
+
 
 
 
@@ -595,13 +648,20 @@ ggplot() +
                y = dens.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data = ARD4s_sum,
                 aes(x = structure,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
-  ggtitle("just data - final density 4-6")
+  # ggtitle("just data - final density 4-6") +
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Final~Density~(~fish~m^{2}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
 
 
 
@@ -656,7 +716,7 @@ ttest.3s
 
 # significant (t = -2.1001, df = 1534, p-value = 0.03589)
 
-# option 2) Wilcoxon non-parametric test --------------------------------------------------
+# option 2) Wilcoxon non-parametric test - use this --------------------------------------------------
 
 w3s <- wilcox.test(ARD3s$density ~ ARD3s$structure)
 # overall recruit density is significantly different between plots with and without added structure  (W = 148020, p-value = 0.01279)
@@ -677,13 +737,19 @@ ggplot() +
                y = dens.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3s_sum,
                 aes(x = structure,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
-  ggtitle("just data - overall density (0-3")
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Mean~density~(~fish~m^{2}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
 
 
 
@@ -754,13 +820,20 @@ ggplot() +
                y = rich.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3sr_sum,
                 aes(x = structure,
                     ymin = rich.mean+rich.se,
                     ymax = rich.mean-rich.se),
                 width = 0.3) +
-  ggtitle("just data - overall rich (0-3")
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Richness~(~number~of~species))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+
 
 
 
@@ -785,6 +858,7 @@ options(contrasts=c("contr.sum","contr.poly"))
 # use the options command above whenever you are doing ANOVA analyses in R _______________________________________________
 ___________________________________________________
 ________________________________________
+
 
 # A. RECRUITMENT RATE -----------------------------------------------------
 # option 1) two-way anova --------------------------------------------------------
@@ -1004,8 +1078,12 @@ ggplot() +
                     ymin = predicted+std.error,
                     ymax = predicted-std.error),
                 width = 0.3) +
-  ggtitle("predicted AR1 gls (outline) over data (colour)") +
-  # ylim(-0.4,0.7) +
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Recruitment~rate~(~fish~m^{2}~d^{1}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
   facet_grid(.~C) 
 
 # data
@@ -1020,36 +1098,26 @@ ggplot() +
                y = rate.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrsc_sum,
                 aes(x = structure,
                     ymin = rate.mean+rate.se,
                     ymax = rate.mean-rate.se),
                 width = 0.3) +
-  ggtitle("just data, structure * complexity") +
-# ylim(-0.4,0.7) +
-facet_grid(.~C)
+  # ggtitle("just data, structure * complexity") +
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Recruitment~rate~(~fish~m^{2}~d^{1}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+facet_grid(.~C) +
+  ylim(-0.02,0.15)
 
 
-ARD3scr_sum <- ARD3scr %>% 
-  group_by(structure,C) %>% 
-  summarize(rich.mean = mean(rich), rich.sd = sd(rich)) %>%
-  mutate(rich.se = rich.sd/sqrt(1536))
 
-ggplot() +
-  geom_col(data = ARD3scr_sum,
-           aes(x = structure,
-               y = rich.mean,
-               group = structure,
-               fill = structure),
-           alpha = 0.5) +
-  geom_errorbar(data =ARD3scr_sum,
-                aes(x = structure,
-                    ymin = rich.mean+rich.se,
-                    ymax = rich.mean-rich.se),
-                width = 0.3) +
-  ggtitle("just data - overall rich (0-3")+
-  facet_grid(.~C)
+
+
 
 
 
@@ -1243,6 +1311,7 @@ glmm.sc2n2 <- glmmTMB(density~structure*C + (1|visit) + (1|plot), family = nbino
 
 AIC(glm.scn2, glmm.scn2, glmm.sc1n2,glmm.sc2n2) # glmm.sc1n2 (visit as re)
 car::Anova(glmm.sc1n2)
+summary(glmm.sc1n2)
 
 # Analysis of Deviance Table (Type II Wald chisquare tests)
 # 
@@ -1251,6 +1320,18 @@ car::Anova(glmm.sc1n2)
 # structure   2.6036  1     0.1066
 # C           1.1116  1     0.2917
 # structure:C 2.1284  1     0.1446
+
+glmm.sc1n2emm <- emmeans(glmm.sc1n2, pairwise ~ structure | C)
+pairs(glmm.sc1n2emm) 
+
+# $emmeans
+# C = Low:
+#   contrast estimate    SE  df t.ratio p.value
+# no - yes   -0.609 0.281 282 -2.165  0.0312 
+# 
+# C = High:
+#   contrast estimate    SE  df t.ratio p.value
+# no - yes   -0.054 0.256 282 -0.211  0.8328 
 
 #evaluate model with dharma_____________________________________________________________________
 #dispersion test
@@ -1286,14 +1367,23 @@ ggplot() +
                y = dens.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data = ARD4sc_sum,
                 aes(x = structure,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
-  ggtitle("just data - final density 4-6") +
-  facet_grid(.~C)
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Final~density~(~fish~m^{2}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  facet_grid(.~C) +
+  ylim(0,4)
+
+
+
 
 
 
@@ -1477,7 +1567,25 @@ testResiduals(simoutglm.scr2)   ## these are displayed on the plots
 
 # visualize ---------------------------------------------------------------
 
+ARD3scr_sum <- ARD3scr %>% 
+  group_by(structure,C) %>% 
+  summarize(rich.mean = mean(rich), rich.sd = sd(rich)) %>%
+  mutate(rich.se = rich.sd/sqrt(1536))
 
+ggplot() +
+  geom_col(data = ARD3scr_sum,
+           aes(x = structure,
+               y = rich.mean,
+               group = structure,
+               fill = structure),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3scr_sum,
+                aes(x = structure,
+                    ymin = rich.mean+rich.se,
+                    ymax = rich.mean-rich.se),
+                width = 0.3) +
+  ggtitle("just data - overall rich (0-3")+
+  facet_grid(.~C)
 
 # 3A) COMPOSITION ---------------------------------------------------------
 ______________________________________________________________________________
@@ -3541,6 +3649,7 @@ ggplot() +
 
 
 
+
 # B. RELATIVE FINAL DENSITY ---------------------------------------------------------------------
 
 # for the relative final density bit I could either consider repeated measures factorial design (if assumptions are met) or glmm like originally planned
@@ -4487,6 +4596,37 @@ car::Anova(M3glmmTMB)
 # range of graphical methods to assess how wekk a model fits the data
 # doesn't actually show the code in the book lol, just the plots
 
+M3glmmTMBemm <- emmeans(M3glmmTMB, pairwise ~ Tr | C)
+pairs(M3glmmTMBemm) 
+
+# C = Low:
+#   contrast    estimate     SE   df t.ratio p.value
+# 0% - 30%    0.053524 0.0532 1267  1.006  0.8528 
+# 0% - 50%   -0.022059 0.0532 1267 -0.414  0.9938 
+# 0% - 70%   -0.060540 0.0532 1267 -1.138  0.7864 
+# 0% - 100%  -0.722202 0.2128 1267 -3.394  0.0064 **
+# 30% - 50%  -0.075583 0.0533 1267 -1.419  0.6153 
+# 30% - 70%  -0.114064 0.0532 1267 -2.144  0.2023 
+# 30% - 100% -0.775726 0.2128 1267 -3.645  0.0026 **
+# 50% - 70%  -0.038481 0.0533 1267 -0.723  0.9513 
+# 50% - 100% -0.700143 0.2128 1267 -3.290  0.0091 **
+# 70% - 100% -0.661662 0.2128 1267 -3.110  0.0164 *
+# 
+# C = High:
+#   contrast    estimate     SE   df t.ratio p.value
+# 0% - 30%    0.000792 0.1189 1267  0.007  1.0000 
+# 0% - 50%   -0.174276 0.1190 1267 -1.465  0.5857 
+# 0% - 70%   -0.305219 0.1190 1267 -2.565  0.0776 
+# 0% - 100%   0.527251 0.4757 1267  1.108  0.8022 
+# 30% - 50%  -0.175067 0.1190 1267 -1.472  0.5812 
+# 30% - 70%  -0.306011 0.1189 1267 -2.573  0.0760 
+# 30% - 100%  0.526459 0.4758 1267  1.106  0.8032 
+# 50% - 70%  -0.130944 0.1189 1267 -1.101  0.8060 
+# 50% - 100%  0.701527 0.4758 1267  1.475  0.5793 
+# 70% - 100%  0.832470 0.4759 1267  1.749  0.4040 
+
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
 # dharma glmm ______________________________________________________________________________________________________
 
 library(DHARMa)
@@ -4625,15 +4765,21 @@ ggplot() +
                y = rabun.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrao_sum,
                 aes(x = Tr,
                     ymin = rabun.mean+rabun.se,
                     ymax = rabun.mean-rabun.se),
                 width = 0.3) +
   ggtitle("just data no outlier- ARD 3 rabun whole study") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
+  ggtitle("mean recruit density (0-3cm)") +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  # scale_fill_manual(values = c("firebrick", "darkorange1", "goldenrod1", "mediumseagreen", "royalblue"))+
+  labs(x = expression(percent~living~coral),
+       y = expression(relative~fish~density~(fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
 
 
 # option 2: glmmtmb without outliers --------------------------------------
@@ -4928,6 +5074,8 @@ testResiduals(simoutglmm.3.2)   ## these are displayed on the plots
 # 2) testOutliers: if there are more simulation outliers than expected        # non sig 
 # 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,
 
+
+
 ARD3_sum <- ARD_3 %>% 
   group_by(Tr,C) %>% 
   summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
@@ -4939,13 +5087,17 @@ ggplot() +
                y = dens.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3_sum,
                 aes(x = Tr,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
   ggtitle("mean recruit density (0-3cm)") +
+  # scale_fill_manual(values = c("cyan4","coral3")) +
+  # scale_fill_manual(values = pal) +
+  scale_fill_manual(values = c("grey", "#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  # scale_fill_manual(values = c("grey","firebrick", "darkorange1", "goldenrod1", "mediumseagreen", "royalblue"))+
   labs(x = expression(percent~living~coral),
        y = expression(fish~density~(fish~m^{2}))) +
   facet_grid(.~C) +
@@ -5009,6 +5161,7 @@ pairs(glmm.3.2emm3)
 
 # Results are given on the log (not the response) scale.
 #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 # I added this
+
 
 # D. RICHNESS ----------------------------------------------------
 
