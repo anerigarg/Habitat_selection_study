@@ -4,7 +4,7 @@
 
 
 
- _________________________________________________
+ ________________________________________________________________
 
 # A. RECRUITMENT RATE -----------------------------------------------------
 
@@ -134,6 +134,7 @@ ggplot() +
 
 
 
+
 # B. FINAL DENSITY ---------------------------------------------------------------------
 
 ARD_4to6 <- read_csv("data/filter 0 values/ARD_4to6.csv") %>% 
@@ -200,7 +201,7 @@ wilcox.test(ARD4bc$density ~ ARD4bc$C)
 # I'm surprised these aren't sig different considering mean and sd
 
 
-#  option 3) glmm - don't use... ---------------------------------------------------------
+# option 3) glmm - don't use... ---------------------------------------------------------
 
 glmm4bc <- glmmTMB(density~C, data = ARD4bc)
 glmm4bc1 <- glmmTMB(density~C + (1|plot), data = ARD4bc)
@@ -340,7 +341,7 @@ ggplot() +
   ggtitle("just data - overall density (0-3")
 
 
-# D. DIVERSITY METRICS ----------------------------------------------------
+# D. RICHNESS ----------------------------------------------------
 
 ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>% 
   dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
@@ -421,7 +422,7 @@ ggplot() +
 # 2a) STRUCTURE VS NO STRUCTURE --------------------------------------------
 
 # uneven sample size, consider taking random sample from "structure" df to compare to
- _____________________________________________________________________________
+ ______________________________________________________________
 
 # A. RECRUITMENT RATE -----------------------------------------------------
 # option 1) t-test --------------------------------------------------------
@@ -605,6 +606,7 @@ ggplot() +
 
 
 
+
 # C. OVERALL DENSITY ------------------------------------------------------
 # option 1) t.test --------------------------------------------------------
 
@@ -686,7 +688,7 @@ ggplot() +
 
 
 
-# D. DIVERSITY METRICS ----------------------------------------------------
+# D. RICHNESS ----------------------------------------------------
 # option 1) t.test --------------------------------------------------------
 
 ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>% 
@@ -762,6 +764,7 @@ ggplot() +
 
 
 
+
 # 2b) STRUCTURE VS NO STRUCTURE * BACKGROUND COMPLEXITY --------------------------------------------
 
 # uneven sample size, consider kruskall wallis test? 
@@ -781,7 +784,7 @@ options(contrasts=c("contr.sum","contr.poly"))
 # However, they can differ widely when analyzing unbalanced data, so it is a good practice to
 # use the options command above whenever you are doing ANOVA analyses in R _______________________________________________
 ___________________________________________________
-
+________________________________________
 
 # A. RECRUITMENT RATE -----------------------------------------------------
 # option 1) two-way anova --------------------------------------------------------
@@ -961,6 +964,15 @@ qqnorm(M0sc, main = "lm")
 acf(H1b,na.action = na.pass, main = "autocorrelation plot for resids gls")  
 
 anova(M3sc)
+car::Anova(M3sc) #not sig
+# Analysis of Deviance Table (Type II tests)
+# 
+# Response: rate
+# Df  Chisq Pr(>Chisq)
+# structure    1 0.0120     0.9129
+# C            1 0.1604     0.6888
+# structure:C  1 0.6338     0.4260
+
 summary(M3sc)
 
 # recruitment rate between H/L and structure N/Y is not significant when using gls with AR1 temporal regression structure
@@ -1038,6 +1050,8 @@ ggplot() +
                 width = 0.3) +
   ggtitle("just data - overall rich (0-3")+
   facet_grid(.~C)
+
+
 
 # B. FINAL DENSITY ---------------------------------------------------------------------
 
@@ -1284,6 +1298,7 @@ ggplot() +
 
 
 
+
 # C. OVERALL DENSITY ------------------------------------------------------
 ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
   dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
@@ -1383,7 +1398,7 @@ ggplot() +
 
 
 
-# D. DIVERSITY METRICS ----------------------------------------------------
+# D. RICHNESS ----------------------------------------------------
 
 
 ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>% 
@@ -1460,13 +1475,554 @@ testResiduals(simoutglm.scr2)   ## these are displayed on the plots
 # 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,p-value = 0.984
 
 
+# visualize ---------------------------------------------------------------
+
+
+
+# 3A) COMPOSITION ---------------------------------------------------------
+______________________________________________________________________________
+
+# A. RELATIVE RECRUITMENT RATE -----------------------------------------------------
+ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv", 
+                       col_types = cols(X1 = col_skip())) %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rate = as.numeric(rate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+
+ARDrr <- ARD_3_rate
+
+#checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
+
+
+# option 1) gls (check for lmm) -------------------------------------------
+
+ARD_3_relrate <- read_csv("data/standardize to control calculations/ARD_3_relrate.csv")
+
+ARDrr <- ARD_3_relrate %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  # dplyr::rename(plot_grid_day = visit) %>% 
+  # filter(plot_grid_day != "HS - 8 - 3") %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rrate = as.numeric(rrate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit != "1")
+# cause they're all obv 0 on first day...
+
+
+hist(ARDrr$rrate)
+
+M0glsT <- gls(rrate~ Tr, data = ARDrr) #since there's no correlation term this is essentiallya lm (I think this is my "mull model"?)
+summary(M0glsT)
+#can't actually trust these values since violating assumption of independence...
+
+#make an acf plot to visualize if there's any autocorrelation
+E <- residuals(M0glsT, type = "normalized")
+I1 <- !is.na(ARDrr$rrate)
+Efull <- vector(length = length(ARDrr$rrate))
+Efull <- NA
+Efull[I1] <- E
+acf(Efull, na.action = na.pass,
+    main = "Auto-correlation plot for residuals")
+
+#some kidn of temporal autocorrelation structure
+
+# test 4 dif autocorrelation strucutres: (following code from Zuur)____________________________________________________________________
+
+# compound symmetry
+M1glsT <- gls(rrate~ Tr, correlation = corCompSymm(form = ~ visit), data = ARDrr)  #new one
+
+# unstructured covariance matrix
+# glsM2T<-gls(rrate~Tr,corr=corSymm(form = ~ visit),weights=varIdent(form=~1|visit),method="ML",data=ARDrr)
+# funktioniert immer wieder nicht!
+# it also ist nicht funktionen for me...
+
+# autoregressive var-cov matrix
+# M2glsT <- gls(rrate ~ Tr, correlation = corAR1(form = ~ visit|plot_grid), na.action = na.omit, data= ARDrr) #new
+
+# autoregressie with heterogeneous variance var-cov matrixr
+M3glsT <- gls(rrate ~ Tr, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrr) #this one worked
+
+#best structure: and check plots
+M3gls <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDr)
+
+anova(M1glsT, M3glsT) #M3glsT has best structure
+
+M3glsresidsT <- resid(M3glsT)
+
+plot(M3glsT, which = 1)
+hist(M3glsresidsT)# yup looks normal
+qqnorm(M3glsresidsT)
+qqline(M3glsresidsT)
+acf(M3glsresidsT,na.action = na.pass, main = "autocorrelation plot for resids")
+
+boxplot(rrate~plot, data = ARDrr) # doesn't look like there's much going on here, there's 4 levels, the plots are on the same reef so not that far apart, may not end up being important is my guess
+boxplot(rrate~visit, data = ARDrr) # vury interesting, perhaps the autoregressive w het var-cov may actually makes sense looking at this! :)
+
+#OK So the best autoregressive structure is M3gls, with autoregressive variance-covariance structure with heterogeneous variances
+#from her code:
+# the data has an autoregressive var-cov structure with heterogeneous variances
+# what does it mean? it means observations that are more proximate are correlated and variances change over time (obs. closer to each other are more similar)
+
+#Next: Check random effects with the correct autocorrelation structre (from M3gls) _________________________________________
+lmmM1T <- lme(rrate~Tr, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr)#convergence issues
+lmmM2T <- lme(rrate~Tr, random = ~1|plot/visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) #convergence issues
+lmmM3T <- lme(rrate~Tr, random = ~1|plot, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) #convergence issues
+
+#so none converging again, weird...
+
+# now check if adding plot as a "nuissance" fixed effect matters__________________________________________________________
+
+lmmM1.1T <- lmmM1 <- lme(rrate~Tr + plot, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr)
+lm2T <- gls(rrate~ Tr + plot, data = ARDrr)
+# getting Singularity error for first one. going to compare M3gls and lm2T
+
+anova(lm2T, M3glsT) #wait since they have dif fixed effects can' exactly do reml comparison...
+#however since plot is behaving weirdly, but from visal assessment from boxplot don't expect there to be difs then 
+
+# test significance of random effect visit and AR1 structure__________________________________________________________________________________
+
+M0glsT <- gls(rrate~ Tr, data = ARDrr) #the null model (lm) - no random effect or autoregression structure
+lmmM1aT <- lme(rrate~Tr, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) #AR1 structure and random effect
+lmmM1bT <- gls(rrate~Tr, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrr) # just AR1 structure
+lmmM1cT <- lme(rrate~Tr, random = ~1|visit, data=ARDrr) #just random effect
+
+anova(M0glsT, lmmM1bT, lmmM1cT) #lmmM1bT is best --> with just ar1 structure
+
+# Model df      AIC      BIC    logLik   Test  L.Ratio p-value
+# M0glsT      1  6 4772.206 4802.722 -2380.103                        
+# lmmM1bT     2 21 3933.358 4040.162 -1945.679 1 vs 2 868.8483  <.0001
+# lmmM1cT     3  7 4746.091 4781.692 -2366.046 2 vs 3 840.7330  <.0001
+
+
+summary(lmmM1bT) #AR1 structre 
+summary(M0glsT) # no ar1 st
+
+# inspect models: _________________________________________________________________________________________________________
+
+# inspecting heteroscedacity of residuals - lmm w AR1
+H1a<-resid(lmmM1bT,type="normalized")
+H2a<-fitted(lmmM1bT)
+par(mfrow=c(2,2))
+plot(x=H2a,y=H1a, xlab="fitted values", ylab="residuals")
+boxplot(H1a~visit, data=ARDrr, main="visit",ylab="residuals")
+boxplot(H1a~Tr, data=ARDrr, main="treatment",ylab="residuals")
+
+par(mfrow=c(1,1))
+
+# checking for normality of residulas
+
+qqnorm(H1a, main = "AR1") 
+qqline(H1a)
+
+acf(H1a,na.action = na.pass, main = "autocorrelation plot for resids AR1 gls")
+
+summary(lmmM1bT)
+anova(lmmM1bT)
+# drop1(lmmM1b,~.,test="F")
+# summary(lmmM1b)
 
 # visualize ---------------------------------------------------------------
+
+ARDrr_sum <- ARDrr %>% 
+  group_by(Tr) %>% 
+  summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
+  mutate(rate.se = rate.sd/sqrt(1560))
+
+ggplot() +
+  geom_col(data = ARDrr_sum,
+           aes(x = Tr,
+               y = rate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDrr_sum,
+                aes(x = Tr,
+                    ymin = rate.mean+rate.se,
+                    ymax = rate.mean-rate.se),
+                width = 0.3) +
+  ggtitle("just data, treatment")
+  # ylim(-0.4,0.7) +
+  # facet_grid(.~C)
+
+
+# B. RELATIVE FINAL DENSITY --------------------------------------------------------
+ARD_4to6 <- read_csv("data/filter 0 values/ARD_4to6.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+ARD4t <- ARD_4to6 %>% 
+  filter(visit %in% c("14", "15", "16")) #sample size 288
+
+hist(ARD4t$density) #start with negbinom2
+describeBy(ARD4t, group=ARD4t$Tr)
+# control: 2.27, sd = 2.91
+
+
+ggplot(data = ARD4sc)+
+  geom_boxplot(aes(x = structure, 
+                   y = density)) +
+  facet_grid(.~C)
+
+ARD_4to6_relabun <- read_csv("data/standardize to control calculations/ARD_4to6_relabun.csv")
+
+ARD4f <- ARD_4to6_relabun %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity) %>% 
+  filter(visit %in% c("14","15","16"))
+
+hist(ARD4f$rabun) 
+
+ARD4f1 <- ARD4f %>% 
+  mutate(rabun1 = (rabun + 5)) #she's a gamma, already know from when i modelled it it with Tr*C
+
+describeBy(ARD4f, group=(ARD4f$Tr))
+# 0: 0.58 , sd= 3.32
+# 30:  0.48, sd=  3.61
+# 50: 0.02 , sd = 2.78
+# 70: 1.65, sd =  3.86
+# 100: 1.08 , sd= 4.36
+
+
+# option 1) gamma glm or glmm ---------------------------------------------
+
+
+
+lm.0T <- glm(rabun1~Tr, family = gaussian(), data = ARD4f1) #null model, lm of untransformed data
+glm.gamT <- glm(rabun1~Tr, family = Gamma(), data = ARD4f1) # gamma glm
+glmm.gamT <- glmmTMB(rabun1~Tr + (1|plot), family = Gamma(link = "log"), data = ARD4f1)
+glmm.gam1T <- glmmTMB(rabun1~Tr + (1|visit), family = Gamma(link = "log"), data = ARD4f1)
+glmm.gam2T <- glmmTMB(rabun1~Tr + (1|visit) + (1|plot), family = Gamma(link = "log"), data = ARD4f1) 
+
+AIC(lm.0T,glm.gamT,glmm.gamT,glmm.gam1T,glmm.gam2T) #all the re are pretty comparable to the one wout
+# going to use glm.gamT
+
+car::Anova(glm.gamT)
+summary(glm.gamT)
+
+# Call:
+#   glm(formula = rabun1 ~ Tr, family = Gamma(), data = ARD4f1)
+# 
+# Deviance Residuals: 
+#   Min       1Q   Median       3Q      Max  
+# -2.1531  -0.4524  -0.1395   0.2405   1.7562  
+# 
+# Coefficients:
+#   Estimate Std. Error t value Pr(>|t|)    
+# (Intercept)  0.175128   0.007085  24.717   <2e-16 ***
+#   Tr1          0.003977   0.014364   0.277   0.7821    
+# Tr2          0.007382   0.014571   0.507   0.6129    
+# Tr3          0.024043   0.015597   1.541   0.1246    
+# Tr4         -0.024657   0.012665  -1.947   0.0527 .  
+# ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+# 
+# (Dispersion parameter for Gamma family taken to be 0.3893743)
+# 
+# Null deviance: 109.81  on 239  degrees of freedom
+# Residual deviance: 107.60  on 235  degrees of freedom
+# AIC: 1249.2
+# 
+# Number of Fisher Scoring iterations: 6
+
+# dharma_____________________________________________________
+
+#dispersion test
+testDispersion(glm.gamT)
+# p > 0.05, not overdispersed, p-value = 0.608
+
+simoutglm.gamT <- simulateResiduals(fittedModel = glm.gamT, plot = T)#plots scaled resid
+residuals(simoutglm.gamT)
+plot(simoutglm.gamT) # qq looks like the deviation from uniformity is significant :S
+
+plotResiduals(simoutglm.gamT, ARD4f1$Tr) #looks fine
+hist(simoutglm.gamT) # looks just ok, a couple outliers
+
+#goodness of fit tests
+testResiduals(simoutglm.gamT)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # only somewhat sig (p-value = 0.0344)
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers, p-value = 0.06
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, dispersion good, p-value = 0.608
+
+
+# visualize ---------------------------------------------------------------
+
+# just data
+ARD4f_sum <- ARD4f %>%
+  group_by(Tr) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(240))
+
+ggplot() +
+  geom_col(data = ARD4f_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD4f_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  ggtitle("just data - final rel abun 4-6")
+  # ylim(-0.4,0.7) +
+  # facet_grid(.~C) 
+
+
+
+
+# C. RELATIVE OVERALL DENSITY ------------------------------------------------------
+
+ARD_3_relabun <- read_csv("data/standardize to control calculations/ARD_3_relabun.csv")
+
+ARD3ra <- ARD_3_relabun %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity)
+
+ARD3ra1 <- ARD3ra %>% 
+  mutate(rabun1 = rabun + 6)
+
+describeBy(ARD3ra, group=(ARD3ra$Tr))
+# 0: 0.77 , sd =  3.24
+# 30:  0.11, sd =   2.93
+# 50: -0.12 , sd =  2.71
+# 70: 0.55  , sd= 3.65
+# 100:  0.99  , sd = 4.24
+
+
+# option 1) glmm gamma ----------------------------------------------------
+
+
+
+M0glmt <- glm(rabun1~Tr, family = Gamma(link = "log"), data = ARD3ra1)
+M1glmmTMBt <- glmmTMB(rabun1~Tr + (1|visit), family=Gamma(link="log"), data = ARD3ra1) #just visit as re
+M2glmmTMBt <- glmmTMB(rabun1~Tr + (1|plot), family=Gamma(link="log"), data = ARD3ra1) #just plot sa re
+M3glmmTMBt <- glmmTMB(rabun1~Tr + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3ra1) #both visit and plot as re
+
+anova(M1glmmTMBt, M2glmmTMBt, M3glmmTMBt) #the one with both visit and plot as re is the best M3glmmTMBt
+
+summary(M3glmmTMBt) #sig: 0, 30, 50, 70
+
+car::Anova(M3glmmTMBt)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: rabun1
+# Chisq Df Pr(>Chisq)    
+# Tr 27.818  4  1.358e-05 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#dispersion test
+testDispersion(M3glmmTMBt)
+# p p-value = 0.232, not overdispersed
+
+simoutglmm3t <- simulateResiduals(fittedModel = M3glmmTMBt, plot = T)
+residuals(simoutglmm3t)
+plot(simoutglmm3t) # not working?
+
+plotResiduals(simoutglmm3t, ARD3ra1$Tr)
+hist(simoutglmm3t) # looks just fine
+
+#goodness of fit tests
+testResiduals(simoutglmm3t)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # sig, deviation present, p-value = 6.026e-06
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig outliers, p-value = 0.18
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, dispersion p-value = 0.232
+
+
+# visualize ---------------------------------------------------------------
+ARDra_sumt <- ARD3ra %>% 
+  group_by(Tr) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(1280))
+
+ggplot() +
+  geom_col(data = ARDra_sumt,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDra_sumt,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  ggtitle("just data - ARD 3 rabun whole study")
+  # ylim(-0.4,0.7) +
+  # facet_grid(.~C)
+
+
+# D. RELATIVE RICHNESS -------------------------------------------------------------
+
+ARD_3_relrich <- read_csv("data/standardize to control calculations/ARD_3_relrich.csv")
+
+
+ARD3rr <- ARD_3_relrich %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity)
+
+hist(ARD3rr$rrich)
+range(ARD3rr$rrich) #-1.750 to 6.625 (so should add 2 to make all positive values)
+mean(ARD3rr$rrich) #0.4625
+var(ARD3rr$rrich) #1.6681
+boxplot(rrich~plot, data = ARD3rr) # could be something happening here spatially
+boxplot(rrich~visit, data = ARD3rr) # no pattern really, just a bit all over 
+
+#add constant to make positive
+
+ARD3rr1 <- ARD3rr %>% 
+  mutate(rrich1 = rrich + 2)
+
+describeBy(ARD3rr, group=(ARD3rr$Tr))
+# 0: 0.54 , sd =  1.23
+# 30: 0.30 , sd =  1.20
+# 50:  0.28 , sd =  1.19
+# 70:  0.51 , sd =  1.41
+#100:  0.56 , sd =  1.39
+
+# option 1) glmm -----------------------------------------------------------
+
+# choose random effect structure________________________________________________________________________________________________
+
+M0glmmTMBrt <- glmmTMB(rrich1~Tr, family=Gamma(link="log"), data = ARD3rr1)
+M1glmmTMBrt <- glmmTMB(rrich1~Tr + (1|visit), family=Gamma(link="log"), data = ARD3rr1) #just visit as re
+M2glmmTMBrt <- glmmTMB(rrich1~Tr + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
+M3glmmTMBrt <- glmmTMB(rrich1~Tr + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) #both visit and plot as re
+
+AIC(M0glmmTMBrt, M1glmmTMBrt, M2glmmTMBrt, M3glmmTMBrt) #M3 with plot and visit is the best
+anova(M0glmmTMBrt, M1glmmTMBrt, M2glmmTMBrt, M3glmmTMBrt)
+
+car::Anova(M3glmmTMBrt)
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: rrich1
+# Chisq Df Pr(>Chisq)  
+# Tr 11.586  4    0.02071 *
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+summary(M3glmmTMBrt) #sig: 0, 50, 70
+
+# model assessment with dharma__________________________________________________________________________________________________
+
+#dispersion test
+testDispersion(M3glmmTMBrt)
+# p > 0.05, not oversdispersed, p-value = 0.784
+
+simouttmb3rt <- simulateResiduals(fittedModel =M3glmmTMBrt, plot = T) # looks pretty good, just outlier test is sig
+
+residuals(simouttmb3rt)
+plot(simouttmb3rt) # lots of issues in qq: lack onf uniformity, outliers and dispersion
+# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+
+plotResiduals(simouttmb3rt, ARD3rr1$Tr) #looks good
+hist(simouttmb3rt) # I think just ok,  
+
+#goodness of fit tests
+testResiduals(simouttmb3rt)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.6721
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig, p-value = 0.5
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,p-value = 0.784
+testUniformity(simouttmb3r) #KS test, p < 0.05, so not uniform
+
+
+# visualise ---------------------------------------------------------------
+
+
+# visualize __________________________________________________________________________________________________________________
+
+predM3glmmrt <- ggpredict(M3glmmTMBrt, terms = c("Tr")) %>% 
+  rename(Tr = x) %>% 
+  mutate(pred2 = predicted - 2)
+
+ggplot() +                              # looks pretty good actually
+  geom_col(data = ARDrr_sumt,
+           aes(x = Tr,
+               y = rrich.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_col(data = predM3glmmrt ,
+           aes(x = Tr,
+               y = pred2,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM3glmmrt ,
+                aes(x = Tr,
+                    ymin = pred2+std.error,
+                    ymax = pred2-std.error),
+                width = 0.3) +
+  ggtitle("predicted richness (outline) over data (colour)")
+  # ylim(-0.4,0.7) +
+  # facet_grid(.~C) 
+
+# just data plotted w s.e.:
+ARDrr_sumt <- ARD3rr %>% 
+  group_by(Tr) %>% 
+  summarize(rrich.mean = mean(rrich), rrich.sd = sd(rrich)) %>%
+  mutate(rrich.se = rrich.sd/sqrt(1280))
+
+ggplot() +
+  geom_col(data = ARDrr_sumt,
+           aes(x = Tr,
+               y = rrich.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARDrr_sumt,
+                aes(x = Tr,
+                    ymin = rrich.mean+rrich.sd,
+                    ymax = rrich.mean-rrich.sd),
+                width = 0.3) +
+  ggtitle("just data - ARD 3 rrich whole study")
+  # ylim(-0.4,0.7) +
+  # facet_grid(.~C)
+
+
 
 
 
 # 3B) COMPOSITION * BACKGROUND COMPLEXITY ----------------------------------------------------------
  ______________________________________________________________
+________________________________________________________
 
 # A. RELATIVE RECRUITMENT RATE -----------------------------------------------------
 
@@ -2984,6 +3540,7 @@ ggplot() +
   facet_grid(.~C) 
 
 
+
 # B. RELATIVE FINAL DENSITY ---------------------------------------------------------------------
 
 # for the relative final density bit I could either consider repeated measures factorial design (if assumptions are met) or glmm like originally planned
@@ -4313,15 +4870,150 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
+# option 4) glmm - density with control as a treatment --------------------
+
+ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(density = as.numeric(abundance)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+range(ARD_3$density)
+hist(ARD_3$density) #prob neg bin2
+
+describeBy(ARD_3, group=list(ARD_3$Tr, ARD_3$C))
+# L, C: 1.48   2.14
+# L, 0: 
+
+glm.3 <- glm.nb(density~Tr*C, data = ARD_3)
+glmm.3 <- glmmTMB(density~Tr*C + (1|plot), family = nbinom2(), data = ARD_3)
+glmm.3.1 <- glmmTMB(density~Tr*C + (1|visit), family = nbinom2(), data = ARD_3)
+glmm.3.2 <- glmmTMB(density~Tr*C + (1|visit) + (1|plot), family = nbinom2(), data = ARD_3)
+
+AIC(glm.3, glmm.3, glmm.3.1,glmm.3.2) # they all have same output, so I'll use the one with both...?
+car::Anova(glmm.3.2)
+summary(glmm.3.2)
+
+# Analysis of Deviance Table (Type II Wald chisquare tests)
+# 
+# Response: density
+# Chisq Df Pr(>Chisq)    
+# Tr   30.7073  5  1.070e-05 ***
+#   C     1.5154  1     0.2183    
+# Tr:C 37.1665  5  5.546e-07 ***
+#   ---
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+#evaluate model with dharma_____________________________________________________________________
+#dispersion test
+testDispersion(glmm.3.2)
+# fine,p-value = 0.456
+
+simoutglmm.3.2 <- simulateResiduals(fittedModel = glmm.3.2, plot = T)# this looks good!
+residuals(simoutglmm.3.2)
+plot(simoutglmm.3.2) 
+
+plotResiduals(simoutglmm.3.2, ARD_3$Tr)
+plotResiduals(simoutglmm.3.2, ARD_3$C) 
+hist(simoutglmm.3.2) # looks just fine
+
+#goodness of fit tests
+testResiduals(simoutglmm.3.2)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig,
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig 
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig,
+
+ARD3_sum <- ARD_3 %>% 
+  group_by(Tr,C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(1536))
+
+ggplot() +
+  geom_col(data = ARD3_sum,
+           aes(x = Tr,
+               y = dens.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD3_sum,
+                aes(x = Tr,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  ggtitle("mean recruit density (0-3cm)") +
+  labs(x = expression(percent~living~coral),
+       y = expression(fish~density~(fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+# ______________________PAIRWISE COMPARISON & EFFECT SIZE __________________________________
+
+# going to try with emmeans https://cran.r-project.org/web/packages/emmeans/vignettes/interactions.html
+library(emmeans)
+
+glmm.3.2emm <- emmeans(glmm.3.2, "Tr") #ok so this is doing pairwise comparisons of just Tr
+pairs(glmm.3.2emm)
+pwpm(glmm.3.2emm) #displays as matrix, personally i find this harder to see, p values in upper triangle
+
+glmm.3.2emm2 <- emmeans(glmm.3.2, "C") #ok so this is doing pairwise comparisons of just C
+pairs(glmm.3.2emm2)
+
+#trying to include interaciton term:
+
+glmm.3.2emm3 <- emmeans(glmm.3.2, pairwise ~ Tr | C)
+pairs(glmm.3.2emm3) 
+
+# I guess I care more how they compare to control though hey?
+
+# C = Low:
+#   contrast       estimate    SE   df t.ratio p.value
+# control - 0%    -0.6753 0.150 1521 -4.515  0.0001 ***
+# control - 30%   -0.4597 0.151 1521 -3.035  0.0294 *
+# control - 50%   -0.4135 0.152 1521 -2.715  0.0729 
+# control - 70%   -0.7687 0.149 1521 -5.158  <.0001 ***
+# control - 100%  -0.9669 0.148 1521 -6.544  <.0001 ***
+# 0% - 30%         0.2156 0.142 1521  1.514  0.6556 
+# 0% - 50%         0.2618 0.144 1521  1.823  0.4509 
+# 0% - 70%        -0.0934 0.140 1521 -0.668  0.9854 
+# 0% - 100%       -0.2916 0.138 1521 -2.105  0.2849 
+# 30% - 50%        0.0461 0.145 1521  0.317  0.9996 
+# 30% - 70%       -0.3091 0.142 1521 -2.178  0.2487 
+# 30% - 100%      -0.5072 0.140 1521 -3.613  0.0042 **
+# 50% - 70%       -0.3552 0.143 1521 -2.492  0.1271 
+# 50% - 100%      -0.5533 0.141 1521 -3.927  0.0013 **
+# 70% - 100%      -0.1981 0.137 1521 -1.446  0.6988 
+# 
+# C = High:
+#   contrast       estimate    SE   df t.ratio p.value
+# control - 0%    -0.0262 0.141 1521 -0.186  1.0000 
+# control - 30%    0.3199 0.145 1521  2.203  0.2368 
+# control - 50%    0.4554 0.147 1521  3.090  0.0248 *
+# control - 70%    0.2621 0.145 1521  1.810  0.4593 
+# control - 100%   0.1604 0.143 1521  1.119  0.8735 
+# 0% - 30%         0.3460 0.145 1521  2.394  0.1589 
+# 0% - 50%         0.4815 0.147 1521  3.275  0.0138 *
+# 0% - 70%         0.2883 0.144 1521  2.001  0.3422 
+# 0% - 100%        0.1866 0.143 1521  1.305  0.7822 
+# 30% - 50%        0.1355 0.151 1521  0.899  0.9468 
+# 30% - 70%       -0.0578 0.148 1521 -0.391  0.9988 
+# 30% - 100%      -0.1594 0.147 1521 -1.086  0.8870 
+# 50% - 70%       -0.1933 0.150 1521 -1.286  0.7926 
+# 50% - 100%      -0.2949 0.149 1521 -1.978  0.3557 
+# 70% - 100%      -0.1017 0.146 1521 -0.694  0.9826 
+
+# Results are given on the log (not the response) scale.
+#   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 # I added this
 
 # D. RICHNESS ----------------------------------------------------
 
 
 # richness
-
-
-
-
 
 # option 1: glmmTMB  ------------------------------------------------------
 
@@ -4343,7 +5035,7 @@ mean(ARD3rr$rrich) #0.4625
 var(ARD3rr$rrich) #1.6681
 boxplot(rrich~plot, data = ARD3rr) # could be something happening here spatially
 boxplot(rrich~visit, data = ARD3rr) # no pattern really, just a bit all over 
-
+boxplot(rrich~Tr, data = ARD3rr)
 #add constant to make positive
 
 ARD3rr1 <- ARD3rr %>% 
@@ -4437,6 +5129,11 @@ ggplot() +                              # looks pretty good actually
                     ymin = pred2+std.error,
                     ymax = pred2-std.error),
                 width = 0.3) +
+  geom_errorbar(data =ARDrr_sum,
+                aes(x = Tr,
+                    ymin = rrich.mean+rrich.sd,
+                    ymax = rrich.mean-rrich.sd),
+                width = 0.3) +
   ggtitle("predicted richness (outline) over data (colour)") +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
@@ -4456,9 +5153,18 @@ ggplot() +
            alpha = 0.5) +
   geom_errorbar(data =ARDrr_sum,
                 aes(x = Tr,
-                    ymin = rrich.mean+rrich.se,
-                    ymax = rrich.mean-rrich.se),
+                    ymin = rrich.mean+rrich.sd,
+                    ymax = rrich.mean-rrich.sd),
                 width = 0.3) +
   ggtitle("just data - ARD 3 rrich whole study") +
   # ylim(-0.4,0.7) +
+  facet_grid(.~C)
+
+ggplot()+
+  geom_boxplot(data = ARD3rr,
+               aes(x = Tr,
+                   y = rrich,
+                   group = Tr,
+                   fill = Tr),
+               alpha = 0.5) +
   facet_grid(.~C)
