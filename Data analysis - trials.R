@@ -754,6 +754,7 @@ ggplot() +
 
 
 
+
 # D. RICHNESS ----------------------------------------------------
 # option 1) t.test --------------------------------------------------------
 
@@ -832,6 +833,7 @@ ggplot() +
   # facet_grid(.~C) +
   theme_classic() +
   theme(legend.position = "none")
+
 
 
 
@@ -1323,6 +1325,8 @@ summary(glmm.sc1n2)
 
 glmm.sc1n2emm <- emmeans(glmm.sc1n2, pairwise ~ structure | C)
 pairs(glmm.sc1n2emm) 
+glmm.sc1n2emm1 <- emmeans(glmm.sc1n2, pairwise ~ C) #non sig
+pairs(glmm.sc1n2emm1) 
 
 # $emmeans
 # C = Low:
@@ -1389,6 +1393,7 @@ ggplot() +
 
 
 
+
 # C. OVERALL DENSITY ------------------------------------------------------
 ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
   dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
@@ -1427,6 +1432,14 @@ glmm.sc2n23 <- glmmTMB(density~structure*C + (1|visit) + (1|plot), family = nbin
 
 AIC(glm.scn23, glmm.scn23, glmm.sc1n23,glmm.sc2n2) # glmm.sc1n2 (visit as re)
 car::Anova(glmm.sc1n23)
+summary(glmm.sc1n23)
+
+glmm.sc1n23emm <- emmeans(glmm.sc1n23, pairwise ~ structure | C)
+pairs(glmm.sc1n23emm)
+glmm.sc1n23emm1 <- emmeans(glmm.sc1n23, pairwise ~ structure : C, type = "response")
+pairs(glmm.sc1n23emm1)
+glmm.sc1n23emm2 <- emmeans(glmm.sc1n23, pairwise ~ C, type = "response")
+pairs(glmm.sc1n23emm2)
 
 # Analysis of Deviance Table (Type II Wald chisquare tests)
 # 
@@ -1474,14 +1487,22 @@ ggplot() +
                y = dens.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3sc_sum,
                 aes(x = structure,
                     ymin = dens.mean+dens.se,
                     ymax = dens.mean-dens.se),
                 width = 0.3) +
-  ggtitle("just data - overall density (0-3") +
-  facet_grid(.~C)
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Mean~density~(~fish~m^{2}))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  facet_grid(.~C)+
+  ylim(0,3.5)
+
+
 
 
 
@@ -1524,7 +1545,7 @@ describeBy(ARD3scr, group=list(ARD3sr$structure, ARD3sr$C))
 # High yes structure: 1.15 ,sd=  1.07
 
 
-# option 1) neg binom2 ----------------------------------------------------
+# option 1) glmm neg binom2 ----------------------------------------------------
 
 glm.scr <- glm.nb(rich~structure*C, data = ARD3scr)
 glmm.scr <- glmmTMB(rich~structure*C + (1|plot), family = nbinom2(), data = ARD3scr)
@@ -1533,6 +1554,12 @@ glmm.scr2 <- glmmTMB(rich~structure*C + (1|visit) + (1|plot), family = nbinom2()
 
 AIC(glm.scr, glmm.scr, glmm.scr1,glmm.scr2) # glmm.scr1 (visit as re)
 car::Anova(glmm.scr1)
+summary(glmm.scr1)
+
+glmm.scr1emm <- emmeans(glmm.scr1, pairwise ~ structure | C)
+pairs(glmm.scr1emm)
+glmm.scr1emm1 <- emmeans(glmm.scr1, pairwise ~ C) #p = 0.0365
+pairs(glmm.scr1emm1)
 
 # Analysis of Deviance Table (Type II Wald chisquare tests)
 # 
@@ -1578,32 +1605,28 @@ ggplot() +
                y = rich.mean,
                group = structure,
                fill = structure),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD3scr_sum,
                 aes(x = structure,
                     ymin = rich.mean+rich.se,
                     ymax = rich.mean-rich.se),
                 width = 0.3) +
-  ggtitle("just data - overall rich (0-3")+
-  facet_grid(.~C)
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Structure~added),
+       y = expression(Richness~(~number~of~species))) + 
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  facet_grid(.~C)+
+  ylim(0,2)
+
+
 
 # 3A) COMPOSITION ---------------------------------------------------------
 ______________________________________________________________________________
 
-# A. RELATIVE RECRUITMENT RATE -----------------------------------------------------
-ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv", 
-                       col_types = cols(X1 = col_skip())) %>% 
-  dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
-  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
-  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
-                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
-  dplyr::mutate(rate = as.numeric(rate)) %>% 
-  dplyr::mutate(plot = as.factor(plot)) %>% 
-  dplyr::rename(Tr = treatment) %>% 
-  dplyr::rename(C = complexity) %>% 
-  dplyr::filter(visit != "1")
 
-ARDrr <- ARD_3_rate
+# A. RELATIVE RECRUITMENT RATE -----------------------------------------------------
 
 #checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
 
@@ -1712,7 +1735,7 @@ anova(M0glsT, lmmM1bT, lmmM1cT) #lmmM1bT is best --> with just ar1 structure
 # lmmM1cT     3  7 4746.091 4781.692 -2366.046 2 vs 3 840.7330  <.0001
 
 
-summary(lmmM1bT) #AR1 structre 
+summary(lmmM1bT) #AR1 structre, non sig 
 summary(M0glsT) # no ar1 st
 
 # inspect models: _________________________________________________________________________________________________________
@@ -1752,15 +1775,20 @@ ggplot() +
                y = rate.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrr_sum,
                 aes(x = Tr,
                     ymin = rate.mean+rate.se,
                     ymax = rate.mean-rate.se),
                 width = 0.3) +
-  ggtitle("just data, treatment")
-  # ylim(-0.4,0.7) +
-  # facet_grid(.~C)
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~recruitment~rate~(fish~m^{2}~d^{1}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+
 
 
 # B. RELATIVE FINAL DENSITY --------------------------------------------------------
@@ -1812,7 +1840,7 @@ describeBy(ARD4f, group=(ARD4f$Tr))
 # 100: 1.08 , sd= 4.36
 
 
-# option 1) gamma glm or glmm ---------------------------------------------
+# option 1) gamma glmm ---------------------------------------------
 
 
 
@@ -1823,10 +1851,13 @@ glmm.gam1T <- glmmTMB(rabun1~Tr + (1|visit), family = Gamma(link = "log"), data 
 glmm.gam2T <- glmmTMB(rabun1~Tr + (1|visit) + (1|plot), family = Gamma(link = "log"), data = ARD4f1) 
 
 AIC(lm.0T,glm.gamT,glmm.gamT,glmm.gam1T,glmm.gam2T) #all the re are pretty comparable to the one wout
-# going to use glm.gamT
+# the one with both is slightly better tho glmm.gam2T
 
-car::Anova(glm.gamT)
-summary(glm.gamT)
+car::Anova(glmm.gam2T)
+summary(glmm.gam2T)
+
+glmm.gam2Temm <- emmeans(glmm.gam2T, pairwise ~ Tr) #not sig
+pairs(glmm.gam2Temm)
 
 # Call:
 #   glm(formula = rabun1 ~ Tr, family = Gamma(), data = ARD4f1)
@@ -1888,15 +1919,22 @@ ggplot() +
                y = rabun.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD4f_sum,
                 aes(x = Tr,
                     ymin = rabun.mean+rabun.se,
                     ymax = rabun.mean-rabun.se),
                 width = 0.3) +
-  ggtitle("just data - final rel abun 4-6")
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~final~density~(fish~m^{2}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
   # ylim(-0.4,0.7) +
   # facet_grid(.~C) 
+
+
 
 
 
@@ -1940,6 +1978,9 @@ summary(M3glmmTMBt) #sig: 0, 30, 50, 70
 
 car::Anova(M3glmmTMBt)
 
+M3glmmTMBtemm <- emmeans(M3glmmTMBt, pairwise ~ Tr) 
+pairs(M3glmmTMBtemm)
+
 # Analysis of Deviance Table (Type II Wald chisquare tests)
 # 
 # Response: rabun1
@@ -1979,15 +2020,23 @@ ggplot() +
                y = rabun.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDra_sumt,
                 aes(x = Tr,
                     ymin = rabun.mean+rabun.se,
                     ymax = rabun.mean-rabun.se),
                 width = 0.3) +
-  ggtitle("just data - ARD 3 rabun whole study")
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~density~(fish~m^{2}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
   # ylim(-0.4,0.7) +
   # facet_grid(.~C)
+
+
+
 
 
 # D. RELATIVE RICHNESS -------------------------------------------------------------
@@ -2036,6 +2085,12 @@ AIC(M0glmmTMBrt, M1glmmTMBrt, M2glmmTMBrt, M3glmmTMBrt) #M3 with plot and visit 
 anova(M0glmmTMBrt, M1glmmTMBrt, M2glmmTMBrt, M3glmmTMBrt)
 
 car::Anova(M3glmmTMBrt)
+summary(M3glmmTMBrt)
+
+
+M3glmmTMBrtemm <- emmeans(M3glmmTMBrt, pairwise ~ Tr) 
+pairs(M3glmmTMBrtemm)
+
 # Analysis of Deviance Table (Type II Wald chisquare tests)
 # 
 # Response: rrich1
@@ -2114,15 +2169,21 @@ ggplot() +
                y = rrich.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrr_sumt,
                 aes(x = Tr,
-                    ymin = rrich.mean+rrich.sd,
-                    ymax = rrich.mean-rrich.sd),
+                    ymin = rrich.mean+rrich.se,
+                    ymax = rrich.mean-rrich.se),
                 width = 0.3) +
-  ggtitle("just data - ARD 3 rrich whole study")
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Richness~(number~of~species))) +
+  theme_classic() +
+  theme(legend.position = "none")
   # ylim(-0.4,0.7) +
   # facet_grid(.~C)
+
+
 
 
 
@@ -3363,7 +3424,7 @@ M2gls <- gls(rrate ~ Tr*C, correlation = corAR1(form = ~ visit|plot_grid), na.ac
 M3gls <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrr) #this one worked
 
 #best structure: and check plots
-M3gls <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDr)
+M3gls <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrr)
 
 anova(M1gls,M2gls, M3gls) #M3gls has best structure
 
@@ -3418,7 +3479,18 @@ anova(M0gls,lmmM1a, lmmM1b, lmmM1c)
 # but I need to think about if it makes sense to use visit defnied in AR1 AND as a random effect
 # ie is that just trying to deal with heteroscedastity twice in the same model?
 summary(lmmM1a) #AR1 structre and random effect
-summary(lmmM1b) #just AR1 structure
+summary(lmmM1b) #just AR1 structure # top model
+car::Anova(lmmM1b)
+
+lmmM1bemm <- emmeans(lmmM1b, pairwise ~ Tr) #none sig
+pairs(lmmM1bemm)
+lmmM1bemm1 <- emmeans(lmmM1b, pairwise ~ C) #none sig
+pairs(lmmM1bemm1)
+lmmM1bemm2 <- emmeans(lmmM1b, pairwise ~ Tr:C) #none sig
+pairs(lmmM1bemm2)
+
+M0glsemm <- emmeans(M0gls, pairwise ~ Tr|C) #none sig
+pairs(M0glsemm)
 
 # inspect models: _________________________________________________________________________________________________________
 
@@ -3629,7 +3701,7 @@ ggplot() +
 ARDr_sum <- ARDrr %>% 
   group_by(Tr, C) %>% 
   summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
-  mutate(rrate.se = rrate.sd/sqrt(1200))
+  mutate(rrate.se = rrate.sd/sqrt(1440))
 
 ggplot() +
   geom_col(data = ARDr_sum,
@@ -3637,15 +3709,294 @@ ggplot() +
                y = rrate.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDr_sum,
                 aes(x = Tr,
                     ymin = rrate.mean+rrate.se,
                     ymax = rrate.mean-rrate.se),
                 width = 0.3) +
-  ggtitle("just data") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(percent~living~coral),
+       y = expression(Relative~recruitment~rate~(fish~m^{2}~d^{1}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylim(-0.13,0.2)
+  # facet_grid(.~C) 
+
+
+
+# *****relative recruitment rate - first 10 days ----------------------------------
+
+ARD_3_relrate <- read_csv("data/standardize to control calculations/ARD_3_relrate.csv")
+
+ARDrrs <- ARD_3_relrate %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rrate = as.numeric(rrate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity) %>% 
+  dplyr::filter(visit %in% c("1","2","3","4","5","6")) 
+  # filter(rrate < 10) #one outlier above
+# cause they're all obv 0 on first day...
+ARDrrs1 <- ARD_3_relrate %>% 
+  dplyr::mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                               labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  dplyr::mutate(rrate = as.numeric(rrate)) %>% 
+  dplyr::mutate(plot = as.factor(plot)) %>% 
+  dplyr::rename(Tr = treatment) %>% 
+  dplyr::rename(C = complexity)
+
+hist(ARDrrs$rrate)
+
+# NOTE: Now that I'm using just the first few visits, may not need to use correlation structure? 
+
+M0glss <- gls(rrate~ Tr*C, data = ARDrrs) #just a lm
+summary(M0glss)
+
+#make an acf plot to visualize if there's any autocorrelation
+E <- residuals(M0glss, type = "normalized")
+I1 <- !is.na(ARDrrs$rrate)
+Efull <- vector(length = length(ARDrrs$rrate))
+Efull <- NA
+Efull[I1] <- E
+acf(Efull, na.action = na.pass,
+    main = "Auto-correlation plot for residuals")
+
+# test 4 dif autocorrelation strucutres: (following code from Zuur)____________________________________________________________________
+
+# compound symmetry
+M1glss <- gls(rrate~ Tr*C, correlation = corCompSymm(form = ~ visit), data = ARDrrs)
+
+# unstructured covariance matrix
+# glsM2s<-gls(Tr*C,corr=corSymm(form = ~ visit),weights=varIdent(form=~1|visit),data=ARDrrs)
+# funktioniert immer wieder nicht!
+# it also ist nicht funktionen for me...
+
+# autoregressive var-cov matrix
+M2glss <- gls(rrate ~ Tr*C, correlation = corAR1(form = ~1|visit), na.action = na.omit, data= ARDrrs)
+
+# autoregressie with heterogeneous variance var-cov matrixr
+# M3glss <- gls(rrate ~ Tr*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrrs)
+#for some reason this doesn't work for the "start" ARDrrs df... maybe not enough visits? 
+
+anova(M1glss,M2glss) #M2glss has best structure
+
+M2glsresidss <- resid(M2glss)
+
+plot(M2glss, which = 1)
+hist(M2glsresidss)# yup looks normal
+qqnorm(M2glsresidss)
+qqline(M2glsresidss)
+acf(M2glsresidss,na.action = na.pass, main = "autocorrelation plot for resids")
+
+boxplot(rrate~plot, data = ARDrrs) # looks fine
+boxplot(rrate~visit, data = ARDrrs) # evenly variable now
+
+#OK So the best autoregressive structure is M2gls, with autoregressive variance-covariance structure and homogeneous variances
+#so observations closer together are more similar
+
+#Next: Check random effects with the correct autocorrelation structre (from M3gls) _________________________________________
+lmmM1s <- lme(rrate~Tr*C, random = ~1|visit, correlation = corAR1(form = ~1|visit),data=ARDrrs)
+lmmM2s <- lme(rrate~Tr*C, random = ~1|plot/visit, correlation = corAR1(form = ~1|visit),data=ARDrrs) #convergence issues
+lmmM3s <- lme(rrate~Tr*C, random = ~1|plot, correlation = corAR1(form = ~1|visit),data=ARDrrs) #convergence issues
+
+anova(lmmM1s)
+
+# test significance of random effect visit and AR1 structure__________________________________________________________________________________
+
+M0glss <- gls(rrate~ Tr*C, data = ARDrrs) #the null model (lm) - no random effect or autoregression structure
+lmmM1as <- lme(rrate~Tr*C, random = ~1|visit, correlation = corAR1(form = ~1|visit),data=ARDrrs) #AR1 structure and random effect
+lmmM1bs <- gls(rrate~Tr*C, correlation = corAR1(form = ~1|visit),data=ARDrrs) # just AR1 structure
+lmmM1cs <- lme(rrate~Tr*C, random = ~1|visit, data=ARDrrs) #just random effect
+
+anova(M0glss,lmmM1as, lmmM1bs, lmmM1cs) #lmmM1as is the best, the one with re of visit and AR1 structure.
+#only 1 value dif from just re structure lmmM1cs
+
+summary(lmmM1as) #just AR1 structure # top model, then the one with random effects (lmmM1as)
+car::Anova(lmmM1as)
+summary(lmmM1bs)
+
+lmmM1aemm2s <- emmeans(lmmM1as, pairwise ~ Tr|C) #none sig
+pairs(lmmM1aemm2s)
+lmmM1aemm2sb <- emmeans(lmmM1bs, pairwise ~ Tr|C) #none sig
+pairs(lmmM1aemm2sb)
+
+# inspect models: _________________________________________________________________________________________________________
+
+# inspecting heteroscedacity of residuals - lmm w AR1
+H1a<-resid(lmmM1as,type="normalized")
+H2a<-fitted(lmmM1as)
+par(mfrow=c(2,2))
+plot(x=H2a,y=H1a, xlab="fitted values", ylab="residuals")
+boxplot(H1a~visit, data=ARDrrs, main="visit",ylab="residuals")
+boxplot(H1a~Tr, data=ARDrrs, main="treatment",ylab="residuals")
+boxplot(H1a~C, data=ARDrrs, main="complexity",ylab="residuals")
+
+# inspecting heteroscedacity of residuals - just lmm with visit as re , they look the same so stick with lmmM1as
+H1b<-resid(lmmM1cs,type="normalized")
+H2b<-fitted(lmmM1cs)
+par(mfrow=c(2,2))
+plot(x=H2b,y=H1b, xlab="fitted values", ylab="residuals")
+boxplot(H1b~visit, data=ARDrrs, main="visit",ylab="residuals")
+boxplot(H1b~Tr, data=ARDrrs, main="treatment",ylab="residuals")
+boxplot(H1b~C, data=ARDrrs, main="complexity",ylab="residuals")
+
+par(mfrow=c(1,1))
+
+# checking for normality of residulas
+
+qqnorm(H1a, main = "AR1 lmm") 
+qqline(H1a)
+qqnorm(H1b, main = "just gls")  # just gls better
+qqline(H1b)
+
+
+
+# ___________________________________plot model results over data ____________________________________________________
+library(ggeffects)
+# extract predicted coefficients
+predlmmM1as <- ggpredict(lmmM1as, terms = c("Tr", "C")) %>%
+  rename(Tr = x) %>%
+  rename(C = group)
+
+ggplot() +
+  geom_col(data = ARDrs_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.6) +
+  geom_col(data = predlmmM1as,
+           aes(x = Tr,
+               y = predicted,
+               group = Tr),
+           colour = "black",
+           fill = "transparent") +
+  # geom_errorbar(data =predlmmM1as,
+  #               aes(x = Tr,
+  #                   ymin = predicted+conf.low,
+  #                   ymax = predicted+conf.high),
+  #               width = 0.3) +
+  geom_errorbar(data =predlmmM1as,
+                aes(x = Tr,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~recruitment~rate~(~fish~m^{2}~d^{1}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+# look at how model with just re
+predlmmM1cs <- ggpredict(lmmM1cs, terms = c("Tr", "C")) %>%
+  rename(Tr = x) %>%
+  rename(C = group)
+
+ggplot() +
+  geom_col(data = predlmmM1cs,
+           aes(x = Tr,
+               y = predicted,
+               group = Tr),
+           colour = "black",
+           fill = "transparent") +
+  geom_col(data = ARDrs_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  # geom_errorbar(data =predlmmM1cs,
+  #               aes(x = Tr,
+  #                   ymin = predicted+conf.low,
+  #                   ymax = predicted+conf.high),
+  #               width = 0.3) +
+  geom_errorbar(data =predlmmM1as,
+                aes(x = Tr,
+                    ymin = predicted+std.error,
+                    ymax = predicted-std.error),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~recruitment~rate~(fish~m^{2}~d^{1}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+
+# just data plotted w s.e.:
+ARDrs_sum <- ARDrrs %>% 
+  group_by(Tr, C) %>% 
+  # filter(visit != "1") %>% #n = 400
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(640))
+
+ggplot() +
+  geom_col(data = ARDrs_sum,
+           aes(x = Tr,
+               y = rrate.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.9) +
+  geom_errorbar(data =ARDrs_sum,
+                aes(x = Tr,
+                    ymin = rrate.mean+rrate.se,
+                    ymax = rrate.mean-rrate.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~recruitment~rate~(~fish~m^{2}~d^{1}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+  # ylim(-0.13,0.2)
+# facet_grid(.~C) 
+
+# plot rate over whole time period
+
+ARDrrs_sum1 <- ARDrrs1 %>% 
+  group_by(Tr, C, days_since_outplanting) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(1280))
+
+ggplot() +
+  geom_point(data = ARDrrs1,
+             aes(x = days_since_outplanting,
+                 y = rrate,
+                 colour = Tr),
+             alpha = 0.3) +
+  geom_point(data = ARDrrs_sum1,
+             aes(x = days_since_outplanting,
+                 y = rrate.mean,
+                 group = Tr,
+                 colour = Tr),
+             size = 2.5) +
+  facet_grid(.~C) +
+  geom_line(data = ARDrrs_sum1,
+            aes(x = days_since_outplanting,
+                y = rrate.mean,
+                group = Tr,
+                colour = Tr),
+            size = 1,
+            alpha = 0.8)+
+  geom_errorbar(data = ARDrrs_sum1,
+                aes(x = days_since_outplanting,
+                    ymin = rrate.mean-rrate.se,
+                    ymax = rrate.mean+rrate.se,
+                    colour = Tr),
+                width = 0.15) +
+  scale_colour_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF"),name = "% living coral") +
+  labs(x = expression(days_since_outplanting),
+       y = expression(Relative~recruitment~rate~(~fish~m^{2}~d^{1}))) +
+  theme_classic()
+  # ylim(-5,5)
 
 
 
@@ -3794,11 +4145,15 @@ AIC(lmmsq, lmsq, lmsq2, lmmsq2) #lmsq better
 # lmsq best for transformed data, so just regular lm with no random effect
 # glm.gam and glmm.gam1 (visit as re) as re) best for untransformed data,
 
-car::Anova(glmm.gam)
-car::Anova(glmm.gam)
-car::Anova(glm.gam)
-anova(lmsq)
+car::Anova(glmm.gam1)
+summary(glmm.gam1)
 
+glmm.gamemm4 <- emmeans(glmm.gam1, pairwise ~ Tr|C) 
+pairs(glmm.gamemm4)
+glmm.gamemm3 <- emmeans(glmm.gam1, pairwise ~ C) 
+pairs(glmm.gamemm3)
+glmm.gamemm2 <- emmeans(glmm.gam1, pairwise ~ Tr) 
+pairs(glmm.gamemm2)
 
 # lmsq model evaluation ---------------------------------------------------
 
@@ -4104,16 +4459,19 @@ ggplot() +
                y = rabun.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD4f_sum,
                 aes(x = Tr,
                     ymin = rabun.mean+rabun.se,
                     ymax = rabun.mean-rabun.se),
                 width = 0.3) +
-  ggtitle("just data - final rel abun 4-6") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
-
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(percent~living~coral),
+       y = expression(relative~final~density~(fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylim(-1.1,2.5)
 
 
 
@@ -4425,7 +4783,7 @@ ggplot() +
   facet_grid(.~C) 
 
 
-# just data
+# just data - remove o
 ARD4fo_sum <- ARD4fo %>%
   group_by(Tr, C) %>% 
   summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
@@ -4450,7 +4808,7 @@ ggplot() +
 ARD4foo <- ARD4fo %>% #took out the 6 obs above 10
   filter(plot_grid_visit %notin% c('LN - 13 - 14', 'HN - 13 - 15', 'HN - 1 - 16', 'LS - 13 - 16')) 
 
-# just data
+# just data - remove oo
 ARD4foo_sum <- ARD4foo %>%
   group_by(Tr, C) %>% 
   summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
@@ -4471,6 +4829,30 @@ ggplot() +
   ggtitle("just data - final rel abun 4-6 - no outliers over 10") +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
+
+
+# just data
+ARD4f_sum <- ARD4f %>%
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(234))
+
+ggplot() +
+  geom_col(data = ARD4f_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD4f_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  ggtitle("just data - final rel abun 4-6 - no outliers over 10") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
 
 
 
@@ -4575,11 +4957,21 @@ anova(M1glmmTMB, M2glmmTMB, M3glmmTMB) #the one with both visit and plot as re i
 (exp(confint(M3glmm))) #doesn't work on glmms...
 # come back to this
 
-summary(M3glmmTMB) #sig: L0, L50, L100, H0, H70, H100
-summary(M3glmm) # same, less mag
-
+summary(M3glmmTMB) 
 
 car::Anova(M3glmmTMB)
+
+M3glmmTMBemm <- emmeans(M3glmmTMB, pairwise ~ Tr) #only be 30 and 70, but may not mean much w interations
+pairs(M3glmmTMBemm)
+M3glmmTMBemm1 <- emmeans(M3glmmTMB, pairwise ~ C) # 0.0053 
+pairs(M3glmmTMBemm1)
+M3glmmTMBemm2 <- emmeans(M3glmmTMB, pairwise ~ C:Tr) 
+pairs(M3glmmTMBemm2)
+M3glmmTMBemm3 <- emmeans(M3glmmTMB, pairwise ~ C|Tr) 
+pairs(M3glmmTMBemm3)
+M3glmmTMBemm4 <- emmeans(M3glmmTMB, pairwise ~ Tr|C) 
+pairs(M3glmmTMBemm4)
+
 
 # Analysis of Deviance Table (Type II Wald chisquare tests)
 # 
@@ -4728,27 +5120,6 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
-# just data plotted w s.e.:
-ARDra_sum <- ARD3ra %>% 
-  group_by(Tr, C) %>% 
-  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
-  mutate(rabun.se = rabun.sd/sqrt(1280))
-
-ggplot() +
-  geom_col(data = ARDra_sum,
-           aes(x = Tr,
-               y = rabun.mean,
-               group = Tr,
-               fill = Tr),
-           alpha = 0.5) +
-  geom_errorbar(data =ARDra_sum,
-                aes(x = Tr,
-                    ymin = rabun.mean+rabun.se,
-                    ymax = rabun.mean-rabun.se),
-                width = 0.3) +
-  ggtitle("just data - ARD 3 rabun whole study") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C)
 
 # data no outliers plotted w s.e.: (just to see)
 ARDrao_sum <- ARD3rao %>% 
@@ -4780,6 +5151,54 @@ ggplot() +
   facet_grid(.~C) +
   theme_classic() +
   theme(legend.position = "none")
+
+# just data plotted w s.e.:
+ARDra_sum <- ARD3ra %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(1280))
+
+ggplot() +
+  geom_col(data = ARDra_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.9) +
+  geom_errorbar(data =ARDra_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  # scale_fill_manual(values = c("firebrick", "darkorange1", "goldenrod1", "mediumseagreen", "royalblue"))+
+  labs(x = expression(percent~living~coral),
+       y = expression(relative~fish~density~(fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylim(-1.1,3.5) +
+  facet_grid(.~C)
+
+ggplot() +
+  geom_col(data = ARDra_sum,
+           aes(x = C,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.9) +
+  geom_errorbar(data =ARDra_sum,
+                aes(x = C,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Background~complexity),
+       y = expression(relative~fish~density~(fish~m^{2}))) +
+  facet_grid(.~Tr) +
+  theme_classic() +
+  theme(legend.position = "none") +
+  ylim(-1.1,3.5)
 
 
 # option 2: glmmtmb without outliers --------------------------------------
@@ -4871,16 +5290,6 @@ library(multcomp)
 
 car::Anova(M3glmmTMBo) # just T and C sig
 car::Anova(M3glmmTMB) # T, C and T:C sig
-
-# uses Wald chi square stats for comparison 
-# apply to the fixed effects of the conditional compoent of the model
-
-emmeans::emmeans(M3glmmTMB, rabun1~Tr|C) #not working
-
-# MuMIn can run all possible sub-models with dredge
-
-MuMin::dredge(M3glmmTMB)
-
 
 
 # option 3: transform - lmm on sqrt transformed (with constant)-----------------------------------------------------
@@ -5016,7 +5425,7 @@ ggplot() +
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
-# option 4) glmm - density with control as a treatment --------------------
+# option 4: glmm - density with control as a treatment --------------------
 
 ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
   dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
@@ -5163,6 +5572,246 @@ pairs(glmm.3.2emm3)
 #   Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 # I added this
 
 
+
+# option 5: looking at just 0 and 100 in L -------------------------------
+
+ARD_3_relabun <- read_csv("data/standardize to control calculations/ARD_3_relabun.csv")
+
+ARD3ra <- ARD_3_relabun %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity)
+
+
+ARD_0_100L <- ARD3ra  %>% 
+  filter(Tr == c("0%", "100%")) %>% 
+  filter(C == "Low") #128 obs
+
+ARD_0_100L_sum <- ARD_0_100L %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(1280))
+
+ggplot() +
+  geom_col(data = ARD_0_100L_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.9) +
+  geom_errorbar(data =ARD_0_100L_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000",  "#648FFF")) +
+  labs(x = expression(percent~living~coral),
+       y = expression(relative~fish~density~(fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+  # ylim(-1.1,3.5) +
+
+
+# option 6:******* mean density end --> carrying capacity after day 10--------
+
+ARD_3_relabun <- read_csv("data/standardize to control calculations/ARD_3_relabun.csv")
+
+ARD3rae <- ARD_3_relabun %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity) %>% 
+  filter(visit %in% c("7", "8","9","10","11","12","13","14","15","16"))
+
+hist(ARD3rae$rabun)
+range(ARD3rae$rabun)
+
+boxplot(rabun~plot, data = ARD3rae) # could be something happening here spatially
+boxplot(rabun~visit, data = ARD3rae) # no pattern like with rate...
+
+# -5.125 to 25.625
+# only 1 value above 20, consider removing outlier
+ARD3rae$plot_grid_visit <- paste(ARD3rae$plot_grid, "-", ARD3rae$visit)
+
+ARD3raoe <- ARD3rae %>% 
+  filter(plot_grid_visit !='LS - 6 - 15')
+
+#_______________________________________assess it fits gamma distribution _____________________________________
+
+#add constant, range is -5.125, so add 6
+
+ARD3ra1e <- ARD3rae %>% 
+  mutate(rabun1 = rabun + 6) #720 observations
+
+#first need to check if I can use a gamma distribution: (lab notes from Jenny)
+
+ab.mean1e = mean(ARD3ra1e$rabun1)
+ab.var1e = var(ARD3ra1e$rabun1)
+gamma.beta1e = ab.mean1e/ab.var1e
+gamma.alpha1e = ab.mean1e*gamma.beta1e
+
+hist(ARD3ra1e$rabun1, prob = T)
+curve(dgamma(x, gamma.alpha1e, gamma.beta1e),0,25,add = T, col = 'red')
+
+# looks a bit peaky, but other dists won't work
+
+#_________________________________________test random effect structure _______________________________________
+
+M1glmmTMBe <- glmmTMB(rabun1~Tr*C + (1|visit), family=Gamma(link="log"), data = ARD3ra1e) #just visit as re
+M2glmmTMBe <- glmmTMB(rabun1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3ra1e) #just plot sa re
+M3glmmTMBe <- glmmTMB(rabun1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3ra1e) #both visit and plot as re
+
+anova(M1glmmTMBe, M2glmmTMBe, M3glmmTMBe) #the one with both visit and plot as re is the best
+
+summary(M3glmmTMBe)
+
+M3glmmTMBeemm <- emmeans(M3glmmTMBe, pairwise ~ Tr | C) #only 0-50 in H... weird
+pairs(M3glmmTMBeemm) 
+M3glmmTMBeemm1 <- emmeans(M3glmmTMBe, pairwise ~ Tr) #0-50 sig (regarless of background)
+pairs(M3glmmTMBeemm1) 
+M3glmmTMBeemm2 <- emmeans(M3glmmTMBe, pairwise ~ C) #sig
+pairs(M3glmmTMBeemm2) 
+
+#___________________________________model assessment with dharma___________________________________________________
+
+#dispersion test
+testDispersion(M3glmmTMBe)
+# p-value = 0.12, not overdispersed
+
+simoutM3glmmTMBe <- simulateResiduals(fittedModel = M3glmmTMBe, plot = T)
+
+plotResiduals(M3glmmTMBe, ARD3ra1e$Tr)
+plotResiduals(M3glmmTMBe, ARD3ra1e$C)
+hist(simoutM3glmmTMBe) # couple outliers, not surprising
+
+#goodness of fit tests
+testResiduals(simoutM3glmmTMBe)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # sig, deviation present p-value = 5.436e-05
+# 2) testOutliers: if there are more simulation outliers than expected        # not sig outliers,  p-value = 0.12
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # not overdispersed,p-value = 0.12
+
+#______________________________________visualise____________________________________________________________________
+
+predM3glmmTMBe <- ggpredict(M3glmmTMBe, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group) %>% 
+  mutate(pred6 = predicted - 6)
+
+ggplot() +
+  geom_col(data = ARDrae_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_col(data = predM3glmmTMBe ,
+           aes(x = Tr,
+               y = pred6,
+               group = Tr),
+           colour = "black",
+           fill = "transparent") +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  # geom_errorbar(data = predM3glmmTMBe ,
+  #               aes(x = Tr,
+  #                   ymin = pred6-conf.low,
+  #                   ymax = pred6+conf.high),
+  #               width = 0.3) +
+  geom_errorbar(data = predM3glmmTMBe ,
+                aes(x = Tr,
+                    ymin = pred6-std.error,
+                    ymax = pred6+std.error),
+                width = 0.3) +
+  ggtitle("predicted glmm (both) (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+
+#data:
+
+ARDrae_sum <- ARD3rae %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(800))
+
+ggplot() +
+  geom_col(data = ARDrae_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.9) +
+  geom_errorbar(data =ARDrae_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Background~complexity),
+       y = expression(relative~fish~density~(fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+  # ylim(-1.1,3.5)
+
+# density over time: (0-3) (all visits)
+
+
+ARD3ra_sum <- ARD3ra %>% 
+  group_by(Tr, C, days_since_outplanting) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(1280))
+
+ggplot() +
+  geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             colour = "grey40")+
+  theme_classic()+
+  geom_vline(xintercept = 10,
+             linetype = "dashed",
+             colour = "grey40") +
+  # geom_point(data = ARD3ra,
+  #            aes(x = days_since_outplanting,
+  #                y = rabun,
+  #                colour = Tr),
+  #            alpha = 0.2) +
+  geom_point(data = ARD3ra_sum,
+             aes(x = days_since_outplanting,
+                 y = rabun.mean,
+                 group = Tr,
+                 colour = Tr),
+             size = 2.5) +
+  facet_grid(.~C) +
+  geom_line(data = ARD3ra_sum,
+            aes(x = days_since_outplanting,
+                y = rabun.mean,
+                group = Tr,
+                colour = Tr),
+            size = 1,
+            alpha = 0.8)+
+  geom_errorbar(data = ARD3ra_sum,
+                aes(x = days_since_outplanting,
+                    ymin = rabun.mean-rabun.se,
+                    ymax = rabun.mean+rabun.se,
+                    colour = Tr),
+                width = 0.15) +
+  scale_colour_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF"),name = "% living coral") +
+  labs(x = expression(Days),
+       y = expression(Relative~density~(~fish~m^{2}))) +
+  ylim(-4,6)
+  # geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6), alpha=0.1)
+
+
+
 # D. RICHNESS ----------------------------------------------------
 
 
@@ -5218,7 +5867,13 @@ AIC(M0glmmTMBr, M1glmmTMBr, M2glmmTMBr, M3glmmTMBr) #M1 is the best, visit as re
 
 car::Anova(M1glmmTMBr)
 summary(M1glmmTMBr)
-# summary(M3glmmTMBr)
+
+M1glmmTMBremm <- emmeans(M1glmmTMBr, pairwise ~ Tr) 
+pairs(M1glmmTMBremm)
+M1glmmTMBremm1 <- emmeans(M1glmmTMBr, pairwise ~ C) #  0.0002
+pairs(M1glmmTMBremm1)
+M1glmmTMBremm2 <- emmeans(M1glmmTMBr, pairwise ~ Tr|C) 
+pairs(M1glmmTMBremm2)
 
 # model assessment with dharma__________________________________________________________________________________________________
 
@@ -5303,15 +5958,19 @@ ggplot() +
                y = rrich.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARDrr_sum,
                 aes(x = Tr,
-                    ymin = rrich.mean+rrich.sd,
-                    ymax = rrich.mean-rrich.sd),
+                    ymin = rrich.mean+rrich.se,
+                    ymax = rrich.mean-rrich.se),
                 width = 0.3) +
-  ggtitle("just data - ARD 3 rrich whole study") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C)
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(percent~living~coral),
+       y = expression(relative~richniess~(number~of~species))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+  # ylim(-0.1,1.2)
 
 ggplot()+
   geom_boxplot(data = ARD3rr,
@@ -5321,3 +5980,29 @@ ggplot()+
                    fill = Tr),
                alpha = 0.5) +
   facet_grid(.~C)
+
+
+
+
+#  MODEL SUMMARY TABLE - STARGAZER ----------------------------------------
+
+
+#___________________________________stargazer for table output __________________________________________________
+# install.packages("stargazer")
+library(stargazer)
+# lmmM1as
+
+summary(lmmM1as) # TOP MODEL - RELATIVE RECRUITMENT RATE
+
+
+
+
+stargazer(lmmM1as, title = "Table 1. Model Resuls", 
+          type = "text",
+          dep.var.labels = "Relative Recruitment Rate",
+          intercept.bottom = FALSE,
+          # order = c("Constant "),
+          covariate.labels = c("Low, 0% (intercept)","Low, 30%", "Low, 50%", "Low, 70%", "Low, 100%","High, 0%", "High, 30%", "High, 50%", "High, 70%", "High 100%"),
+          omit.stat = c("LL", "bic"),
+          dep.var.caption = "AR1 lmm")
+# ci = TRUE, ci.level = 0.90)
