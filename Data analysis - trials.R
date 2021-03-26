@@ -4001,6 +4001,7 @@ ggplot() +
 
 
 
+
 # B. RELATIVE FINAL DENSITY ---------------------------------------------------------------------
 
 # for the relative final density bit I could either consider repeated measures factorial design (if assumptions are met) or glmm like originally planned
@@ -4020,6 +4021,15 @@ mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%
   rename(C = complexity) %>% 
   filter(visit %in% c("14","15","16"))
 
+ARD4f1 <- ARD_4to6_relabun %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity)
+
 hist(ARD4f$rabun)
 shapiro.test(ARD4f$rabun) #not normal
 # data:  ARD4f$rabun
@@ -4037,19 +4047,12 @@ glm.poiss <- glm(rabun~Tr*C, family = poisson(link = "log"), data = ARD4f)
 range(ARD4f$rabun)
 #-4.75 18.75
 
-
-
-# all data ----------------------------------------------------------------
-
-
-
-# transform data __________________________________________________________________________________________________________________________
+# transform data? (don't use) __________________________________________________________________________________________________________________________
 
 # can also try a cube root on the data:
 Math.cbrt <- function(x) {
   sign(x) * abs(x)^(1/3)
 }
-
 
 ARD4f1 <- ARD4f %>% 
   mutate(rabun1 = (rabun + 5)) %>% # add 5 to all values to make above 1
@@ -4287,7 +4290,7 @@ testUniformity(simoutglm) #KS test, p < 0.05, so not uniform
 testTemporalAutocorrelation(simulationOutput = simoutglm, time = ARD4f1$visit) #can only do this if there's unique values per time step
 
 
-# dharma for glmm.gam1 (visit as re) *USE THIS -------------------------
+# dharma for glmm.gam1 -------------------------
 
 summary(glmm.gam1)
 car::Anova(glmm.gam1)
@@ -4512,14 +4515,54 @@ glm.poiss <- glm(rabun~Tr*C, family = poisson(link = "log"), data = ARD4f)
 range(ARD4f$rabun)
 #-4.75 18.75
 
+# just data - remove o
+ARD4fo_sum <- ARD4fo %>%
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(238))
 
+ggplot() +
+  geom_col(data = ARD4fo_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD4fo_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  ggtitle("just data - final rel abun 4-6 - no outliers") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
+ARD4foo <- ARD4fo %>% #took out the 6 obs above 10
+  filter(plot_grid_visit %notin% c('LN - 13 - 14', 'HN - 13 - 15', 'HN - 1 - 16', 'LS - 13 - 16')) 
+
+# just data - remove oo
+ARD4foo_sum <- ARD4foo %>%
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(234))
+
+ggplot() +
+  geom_col(data = ARD4foo_sum,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_errorbar(data =ARD4foo_sum,
+                aes(x = Tr,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  ggtitle("just data - final rel abun 4-6 - no outliers over 10") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
 
 # transform data __________________________________________________________________________________________________________________________
-
-# can also try a cube root on the data:
-Math.cbrt <- function(x) {
-  sign(x) * abs(x)^(1/3)
-}
 
 
 ARD4f1 <- ARD4f %>% 
@@ -4590,171 +4633,102 @@ AIC(lmmsq, lmsq, lmsq2) #lmsq better
 # lmsq best for transformed data
 
 
-# lmsq model evaluation ---------------------------------------------------
+# ****** glm with gamma USE THIS ------------------------------------------------
+
+ARD_4to6_relabun <- read_csv("data/standardize to control calculations/ARD_4to6_relabun.csv")
+
+ARD4f <- ARD_4to6_relabun %>% 
+  mutate(treatment = factor(treatment, levels = c("0%", "30%", "50%", "70%", "100%"))) %>% 
+  mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
+  mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
+                        labels = c("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16"))) %>%
+  mutate(plot = as.factor(plot)) %>% 
+  rename(Tr = treatment) %>% 
+  rename(C = complexity) %>% 
+  filter(visit %in% c("14","15","16"))
 
 
+hist(ARD4f$rabun)
+shapiro.test(ARD4f$rabun) #not normal
+# data:  ARD4f$rabun
+# W = 0.87297, p-value = 2.988e-13
+mean(ARD4f$rabun) #0.7625
+var(ARD4f$rabun) #13.23, yeah we prob have over-dispersion...
 
-# top model evaluation - sqrt transformed _______________________________________________________________________________________________________
-
-anova(lmsq)
-summary(lmsq)
-
-#ok what if I compare using glm and lm and aov for ancova...
-
-lmsq <- glm(rabun1sqrt~Tr*C, family = gaussian(), data = ARD4f1)
-lmsq1 <- lm(rabun1sqrt~Tr*C, data = ARD4f1)
-anc1 <- aov(rabun1sqrt~Tr*C, data = ARD4f1)
-AIC(lmsq,lmsq1, anc1)
-# they're the exact same... so since Tr and C are factors need to test heterogeneity of slopes also
-
-# model visual evaluation:
-# inspecting heteroscedacity of residuals - lmsq
-J1a<-resid(lmsq)
-J2a<-fitted(lmsq)
-par(mfrow=c(2,2))
-plot(x=J2a,y=J1a, xlab="fitted values", ylab="residuals")
-boxplot(J1a~Tr, data=ARD4f1, main="treatment",ylab="residuals") # looks a bit like there's some heterosc
-boxplot(J1a~C, data=ARD4f1, main="complexity",ylab="residuals") #looks good
-qqnorm(J1a) # looks just ok
-qqline(J1a)
-
-# test residuals for normality:
-shapiro.test(J1a) #according to this, not normal (p < 0.05)
-ks.test(J1a, "pnorm", mean = mean(J1a), sd = sd(J1a)) # p < 0.05, but not by much, p = 0.02
-# getting warning message: ties should not be present for the Kolmogorov-Smirnov test
-hist(J1a, prob = T) # I mean, they look normal...
-curve(dnorm(x, mean = mean(J1a), sd = sd(J1a)), add = T)
-
-# test for heteroscedastitiy of residuals
-bartlett.test(J1a ~as.factor(ARD4f1$Tr)) #homogeneous
-bartlett.test(J1a ~as.factor(ARD4f1$C)) #hetero...
-leveneTest(J1a ~as.factor(ARD4f1$Tr), center = median) #homo
-leveneTest(J1a ~as.factor(ARD4f1$C), center = median) #hetero...
+ARD4f1 <- ARD4f %>% 
+  mutate(rabun1 = (rabun + 5))  # add 5 to all values to make above 1
 
 
+#first need to check if I can use a gamma distribution: (lab notes from Jenny)
 
-# glm gam model evaluation ------------------------------------------------
+ab.mean = mean(ARD4f1$rabun1)
+ab.var = var(ARD4f1$rabun1)
+gamma.beta = ab.mean/ab.var
+gamma.alpha = ab.mean*gamma.beta
 
+hist(ARD4f1$rabun1, prob = T)
+curve(dgamma(x, gamma.alpha, gamma.beta),0,25,add = T, col = 'red')
 
-# model evaluation of glm.gam ___________________________________________________________________________________________________________
+# it actually looks like it fits decently, maybe the gamma dist is a bit under?...
 
-#remember this is non-transformed data, but pure relative abundance for last 3 visits
-summary(glm.gam) # sig for just 0% L
-summary(lmsq) #sig for 0% H and L
-exp(coef(glm.gam))
+lm.0 <- glm(rabun1~Tr*C, family = gaussian(), data = ARD4f1) #lm
+glm.gam <- glm(rabun1~Tr*C, family = Gamma(), data = ARD4f1) # gamma glm
+# glmm.gam <- glmer(rabun1~Tr*C + (1|plot), family = Gamma(link="log"), data = ARD4f1) #gamma glmm plot as re
+glmm.gam1 <- glmer(rabun1~Tr*C + (1|visit), family = Gamma(link="log"), data = ARD4f1) #gamm glmm visit as re
+# glmm.gam2 <- glmer(rabun1~Tr*C + (1|visit) + (1|plot), family = Gamma(link="log"), data = ARD4f1) #gamma glmm plot and visit as re
 
-coef(glm.gam)
-#these match remarkably well...
-# check dharma package for generalized linear models, not sure I can use normal means of assessing models 
+#is Singular error for both the models with plot
 
-K1a<-resid(glm.gam)
-K2a<-fitted(glm.gam)
-par(mfrow=c(2,2))
-plot(x=K2a,y=K1a, xlab="fitted values", ylab="residuals")
-boxplot(K1a~Tr, data=ARD4f1, main="treatment",ylab="residuals") # looks a bit like there's some heterosc
-boxplot(K1a~C, data=ARD4f1, main="complexity",ylab="residuals") #looks good
-qqnorm(K1a) # looks worse than the lmsq
-qqline(K1a)
-par(mfrow=c(1,1))
+AIC(lm.0, glm.gam, glmm.gam1) # glm is the best, but glmm is only 1 AIC value above
 
-# test residuals for normality:
-shapiro.test(K1a) #according to this, not normal (p < 0.05)
-ks.test(K1a, "pnorm", mean = mean(K1a), sd = sd(K1a)) # not normal
-# getting warning message: ties should not be present for the Kolmogorov-Smirnov test
-hist(J1a, prob = T) # I mean, they look normalish, they look almost exactly like my data input actually
-curve(dnorm(x, mean = mean(K1a), sd = sd(K1a)), add = T)
+summary(glm.gam)
+summary(glmm.gam1)
 
-# test for heteroscedastitiy of residuals
-bartlett.test(K1a ~as.factor(ARD4f1$Tr)) #homogeneous
-bartlett.test(K1a ~as.factor(ARD4f1$C)) #hetero...
-leveneTest(K1a ~as.factor(ARD4f1$Tr), center = median) #homo
-leveneTest(K1a ~as.factor(ARD4f1$C), center = median) #hetero.. so same as lmsq
-
-
-# dharma ------------------------------------------------------------------
-
-install.packages("DHARMa")
-library(DHARMa)
-citation("DHARMa")
-
-#uses simulations to calculate residuals
+glm.gamemm4 <- emmeans(glm.gam, pairwise ~ Tr|C)
+pairs(glm.gamemm4)
+glmm.gamemm4 <- emmeans(glmm.gam1, pairwise ~ Tr|C) #just 70 and 50 H
+pairs(glmm.gamemm4)
+glmm.gamemm3 <- emmeans(glmm.gam1, pairwise ~ C) 
+pairs(glmm.gamemm3)
+glmm.gamemm2 <- emmeans(glmm.gam1, pairwise ~ Tr) 
+pairs(glmm.gamemm2)
 
 #dispersion test
+testDispersion(glmm.gam1)
 testDispersion(glm.gam)
-# p > 0.05, not overdispersed
+# p > 0.05, not overdispersed, p-value = 0.544
 
-simoutglm <- simulateResiduals(fittedModel = glm.gam, plot = T) #plots scaled resid
-residuals(simoutglm)
-plot(simoutglm) # qq looks like the deviation from uniformity is significant :S
+simoutglmm.gam1 <- simulateResiduals(fittedModel = glmm.gam1, plot = T)
+simoutglm.gam <- simulateResiduals(fittedModel = glm.gam, plot = T) #this looks better
 
-# the first is a qq plot to detect deviation from expected distribution (deafault is KS test)
-# outliers are those outside the simulation envelope
-# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+plotResiduals(simoutglmm.gam1, ARD4f1$Tr)
+plotResiduals(simoutglmm.gam1, ARD4f1$C) #some hetero,
+plotResiduals(simoutglm.gam, ARD4f1$Tr)
+plotResiduals(simoutglm.gam, ARD4f1$C) #this looks better
 
-plotResiduals(simoutglm, ARD4f1$Tr)
-plotResiduals(simoutglm, ARD4f1$C)
-hist(simoutglm) # doesn't look great? 
-
+hist(simoutglmm.gam1) # doesn't look the best, but better than the glm
+hist(simoutglm.gam)
 
 #goodness of fit tests
-testResiduals(simoutglm)   ## these are displayed on the plots
+testResiduals(simoutglmm.gam1) 
 # calculates 3 tests: 
-# 1) testUniformity: if overall distribution conforms to expectations         # sig, deviation present
-# 2) testOutliers: if there are more simulation outliers than expected        # sig outliers
-# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, dispersion good
-testUniformity(simoutglm) #KS test, p < 0.05, so not uniform
+# 1) testUniformity: if overall distribution conforms to expectations         # sig p-value < 2.2e-16
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig p-value = 0.06
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # sig, p-value < 2.2e-16
+testUniformity(simoutglmm.gam1) #KS test, p-value = 0.01076, so not uniform, but less worse lol
 
-# Heteoscedastity 
+testResiduals(simoutglm.gam) 
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # sig p-value = 0.00275
+# 2) testOutliers: if there are more simulation outliers than expected        # sig p-value = 0.02 #but not by much
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig p-value = 0.512
+testUniformity(simoutglmm.gam1) #KS test, p-value = 0.01076, so not uniform, but less worse lol
 
-# temporal autocorrelation
-testTemporalAutocorrelation(simulationOutput = simoutglm, time = ARD4f1$visit) #can only do this if there's unique values per time step
-
+#based on these evaluations glm.gam is better, kind of makes sense since it's 3 visits
 
 # visualize predictions on data -------------------------------------------
 
-
-# visualize model predictions _________________________________________________________________________________________________________
-
-# lm with sqrt transformed data
-# ok so since I did the sqrt on a constant, need to backtransform coefficients 
-# I added a constant then did sqrt
-# so to back-transform I should first exponentiate, then add 5? mayn not make a dif check
-
-predlmsq <- ggpredict(lmsq, terms = c("Tr", "C")) %>% 
-  rename(Tr = x) %>% 
-  rename(C = group) %>% 
-  mutate(pred.exp = predicted^2) %>% #back transform the sqrt first
-  mutate(pred = pred.exp - 5) #then add the constant
-
-
-#same graph: ()                       #this acutally doesn't look too bad. they're all consistently under-estimated tho...hmmm
-ggplot() +
-  geom_col(data = ARD4f_sum,
-           aes(x = Tr,
-               y = rabun.mean,
-               group = Tr,
-               fill = Tr),
-           alpha = 0.5) +
-  geom_col(data = predlmsq,
-           aes(x = Tr,
-               y = pred,
-               group = Tr),
-           colour = "black",
-           fill = "transparent",
-           size = 1.2) +
-  geom_errorbar(data = predlmsq,
-                aes(x = Tr,
-                    ymin = pred+std.error,
-                    ymax = pred-std.error),
-                width = 0.3) +
-  ggtitle("predicted on data - final density lm sqrt") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
-
-#gam.glm                   #this is uncannily good looking? but also I am skept.  Do i need to back-transform a gamma-distribution? 
-# I feel like Emma said something about not being able to back transform estimates, but predictions, yes
-
-predgam <- ggpredict(glm.gam1, terms = c("Tr", "C")) %>% 
+predgam <- ggpredict(glm.gam, terms = c("Tr", "C")) %>% 
   rename(Tr = x) %>% 
   rename(C = group) %>% 
   mutate(pred = predicted - 5)
@@ -4778,64 +4752,19 @@ ggplot() +
                     ymin = pred+std.error,
                     ymax = pred-std.error),
                 width = 0.3) +
-  ggtitle("predicted on data - final density glm gam") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
-
-
-# just data - remove o
-ARD4fo_sum <- ARD4fo %>%
-  group_by(Tr, C) %>% 
-  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
-  mutate(rabun.se = rabun.sd/sqrt(238))
-
-ggplot() +
-  geom_col(data = ARD4fo_sum,
-           aes(x = Tr,
-               y = rabun.mean,
-               group = Tr,
-               fill = Tr),
-           alpha = 0.5) +
-  geom_errorbar(data =ARD4fo_sum,
-                aes(x = Tr,
-                    ymin = rabun.mean+rabun.se,
-                    ymax = rabun.mean-rabun.se),
-                width = 0.3) +
-  ggtitle("just data - final rel abun 4-6 - no outliers") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
-
-ARD4foo <- ARD4fo %>% #took out the 6 obs above 10
-  filter(plot_grid_visit %notin% c('LN - 13 - 14', 'HN - 13 - 15', 'HN - 1 - 16', 'LS - 13 - 16')) 
-
-# just data - remove oo
-ARD4foo_sum <- ARD4foo %>%
-  group_by(Tr, C) %>% 
-  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
-  mutate(rabun.se = rabun.sd/sqrt(234))
-
-ggplot() +
-  geom_col(data = ARD4foo_sum,
-           aes(x = Tr,
-               y = rabun.mean,
-               group = Tr,
-               fill = Tr),
-           alpha = 0.5) +
-  geom_errorbar(data =ARD4foo_sum,
-                aes(x = Tr,
-                    ymin = rabun.mean+rabun.se,
-                    ymax = rabun.mean-rabun.se),
-                width = 0.3) +
-  ggtitle("just data - final rel abun 4-6 - no outliers over 10") +
-  # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~fish~density~(~fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
 
 
 # just data
 ARD4f_sum <- ARD4f %>%
   group_by(Tr, C) %>% 
   summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
-  mutate(rabun.se = rabun.sd/sqrt(234))
+  mutate(rabun.se = rabun.sd/sqrt(240))
 
 ggplot() +
   geom_col(data = ARD4f_sum,
@@ -4843,19 +4772,66 @@ ggplot() +
                y = rabun.mean,
                group = Tr,
                fill = Tr),
-           alpha = 0.5) +
+           alpha = 0.9) +
   geom_errorbar(data =ARD4f_sum,
                 aes(x = Tr,
                     ymin = rabun.mean+rabun.se,
                     ymax = rabun.mean-rabun.se),
                 width = 0.3) +
-  ggtitle("just data - final rel abun 4-6 - no outliers over 10") +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~fish~density~(~fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
   # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
 
 
 
+ARD4f_sum1 <- ARD4f1 %>% 
+  group_by(Tr, C, days_since_outplanting) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(1280))
 
+ggplot() +
+  # geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  geom_rect(data = ARD4f,  mapping=aes(xmin=0, xmax=37, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             colour = "grey40")+
+  theme_classic()+
+  geom_vline(xintercept = 37,
+             linetype = "dashed",
+             colour = "grey40") +
+  # geom_point(data = ARD3ra,
+  #            aes(x = days_since_outplanting,
+  #                y = rabun,
+  #                colour = Tr),
+  #            alpha = 0.2) +
+  geom_point(data = ARD4f_sum1,
+             aes(x = days_since_outplanting,
+                 y = rabun.mean,
+                 group = Tr,
+                 colour = Tr),
+             size = 2.5) +
+  facet_grid(.~C) +
+  geom_line(data = ARD4f_sum1,
+            aes(x = days_since_outplanting,
+                y = rabun.mean,
+                group = Tr,
+                colour = Tr),
+            size = 1,
+            alpha = 0.8)+
+  geom_errorbar(data = ARD4f_sum1,
+                aes(x = days_since_outplanting,
+                    ymin = rabun.mean-rabun.se,
+                    ymax = rabun.mean+rabun.se,
+                    colour = Tr),
+                width = 0.15) +
+  scale_colour_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF"),name = "% living coral") +
+  labs(x = expression(Days),
+       y = expression(Relative~density~(~fish~m^{2}))) +
+  ylim(-4,6)
 
 # C. RELATIVE DENSITY (WHOLE STUDY) ---------------------------------------
 
@@ -5617,7 +5593,7 @@ ggplot() +
   # ylim(-1.1,3.5) +
 
 
-# option 6:******* mean density end --> carrying capacity after day 10--------
+# option 6:******* mean saturation density after day 10--------
 
 ARD_3_relabun <- read_csv("data/standardize to control calculations/ARD_3_relabun.csv")
 
@@ -5669,9 +5645,16 @@ M1glmmTMBe <- glmmTMB(rabun1~Tr*C + (1|visit), family=Gamma(link="log"), data = 
 M2glmmTMBe <- glmmTMB(rabun1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3ra1e) #just plot sa re
 M3glmmTMBe <- glmmTMB(rabun1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3ra1e) #both visit and plot as re
 
+M1glmmTMBe1 <- glmer(rabun1~Tr*C + (1|visit), family=Gamma(link="log"), data = ARD3ra1e) #just visit as re
+M2glmmTMBe1 <- glmer(rabun1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3ra1e) #just plot sa re
+M3glmmTMBe1 <- glmer(rabun1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3ra1e)
+
+
 anova(M1glmmTMBe, M2glmmTMBe, M3glmmTMBe) #the one with both visit and plot as re is the best
+anova(M1glmmTMBe1, M2glmmTMBe1, M3glmmTMBe1)
 
 summary(M3glmmTMBe)
+summary(M3glmmTMBe1) #exact same results with glmer!!! use this to be compatible with stargazer
 
 M3glmmTMBeemm <- emmeans(M3glmmTMBe, pairwise ~ Tr | C) #only 0-50 in H... weird
 pairs(M3glmmTMBeemm) 
@@ -5701,7 +5684,7 @@ testResiduals(simoutM3glmmTMBe)   ## these are displayed on the plots
 
 #______________________________________visualise____________________________________________________________________
 
-predM3glmmTMBe <- ggpredict(M3glmmTMBe, terms = c("Tr", "C")) %>% 
+predM3glmmTMBe <- ggpredict(M3glmmTMBe1, terms = c("Tr", "C")) %>% 
   rename(Tr = x) %>% 
   rename(C = group) %>% 
   mutate(pred6 = predicted - 6)
@@ -5730,9 +5713,12 @@ ggplot() +
                     ymin = pred6-std.error,
                     ymax = pred6+std.error),
                 width = 0.3) +
-  ggtitle("predicted glmm (both) (outline) over data (colour)") +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~fish~density~(~fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
   # ylim(-0.4,0.7) +
-  facet_grid(.~C) 
 
 
 #data:
@@ -5755,8 +5741,8 @@ ggplot() +
                     ymax = rabun.mean-rabun.se),
                 width = 0.3) +
   scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
-  labs(x = expression(Background~complexity),
-       y = expression(relative~fish~density~(fish~m^{2}))) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~fish~density~(~fish~m^{2}))) +
   facet_grid(.~C) +
   theme_classic() +
   theme(legend.position = "none")
@@ -5771,8 +5757,9 @@ ARD3ra_sum <- ARD3ra %>%
   mutate(rabun.se = rabun.sd/sqrt(1280))
 
 ggplot() +
-  geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
-  geom_hline(yintercept = 0,
+  # geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  geom_rect(data = ARD3ra,  mapping=aes(xmin=10, xmax=50, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+   geom_hline(yintercept = 0,
              linetype = "dashed",
              colour = "grey40")+
   theme_classic()+
@@ -5863,10 +5850,18 @@ M1glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|visit), family=Gamma(link="log"), data = 
 M2glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
 M3glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) #both visit and plot as re
 
-AIC(M0glmmTMBr, M1glmmTMBr, M2glmmTMBr, M3glmmTMBr) #M1 is the best, visit as re, but M3 with both plot and visit is just 2 above
+M0glmmTMBr1 <- glmer(rrich1~Tr*C, family=Gamma(link="log"), data = ARD3rr1)
+M1glmmTMBr1 <- glmer(rrich1~Tr*C + (1|visit), family=Gamma(link = "inverse"), data = ARD3rr1) #just visit as re
+M2glmmTMBr1 <- glmer(rrich1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
+M3glmmTMBr1 <- glmer(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) 
+M4glmmTMBr1 <- glm(rrich1~Tr*C, family = Gamma(), data = ARD3rr1) #just glm
 
-car::Anova(M1glmmTMBr)
+AIC(M0glmmTMBr, M1glmmTMBr, M2glmmTMBr, M3glmmTMBr) #M1 is the best, visit as re
+AIC(M1glmmTMBr1,M4glmmTMBr1) #just visit as re, M1glmmTMBr1
+
+dcar::Anova(M1glmmTMBr)
 summary(M1glmmTMBr)
+summary(M1glmmTMBr1)
 
 M1glmmTMBremm <- emmeans(M1glmmTMBr, pairwise ~ Tr) 
 pairs(M1glmmTMBremm)
@@ -5874,6 +5869,8 @@ M1glmmTMBremm1 <- emmeans(M1glmmTMBr, pairwise ~ C) #  0.0002
 pairs(M1glmmTMBremm1)
 M1glmmTMBremm2 <- emmeans(M1glmmTMBr, pairwise ~ Tr|C) 
 pairs(M1glmmTMBremm2)
+M1glmmTMBremm3 <- emmeans(M1glmmTMBr1, pairwise ~ Tr|C) 
+pairs(M1glmmTMBremm3)
 
 # model assessment with dharma__________________________________________________________________________________________________
 
@@ -5881,6 +5878,7 @@ pairs(M1glmmTMBremm2)
 testDispersion(M1glmmTMBr)
 # p > 0.05, not oversdispersed, p-value = 0.616
 
+simouttmb3r1 <- simulateResiduals(fittedModel =M1glmmTMBr1, plot = T) #this looks crap
 simouttmb3r <- simulateResiduals(fittedModel =M1glmmTMBr, plot = T) # wow this looks great
 simouttmb3r2 <- simulateResiduals(fittedModel =M3glmmTMBr, plot = T) # the one with visit and plot as re also looks good (if u decide to use this)
 
@@ -5898,18 +5896,8 @@ testResiduals(simouttmb3r)   ## these are displayed on the plots
 # 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.6721
 # 2) testOutliers: if there are more simulation outliers than expected        # non sig, p = 1
 # 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, p-value = 0.616
-testUniformity(simouttmb3r) #KS test, p < 0.05, so not uniform
 
-# Heteoscedastity 
-
-# temporal autocorrelation
-testTemporalAutocorrelation(simulationOutput = simouttmb3, time = ARD3ra1$visit) #didn't work, oh ya need 1 obs per time value
-
-ARD3r.time <- ARD3rr1 %>% 
-  group_by(visit) %>% 
-  summarize(mean.r = mean (rrich1))
-
-testTemporalAutocorrelation(simulationOutput = simouttmb3r, time = ARD3r.time$visit) #not autocorrelated,p-value = 0.1277
+testResiduals(simouttmb3r1)  #they're all sig
 
 # visualize __________________________________________________________________________________________________________________
 
@@ -5946,6 +5934,39 @@ ggplot() +                              # looks pretty good actually
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
+predM3glmmr1 <- ggpredict(M1glmmTMBr1, terms = c("Tr", "C")) %>% 
+  rename(Tr = x) %>% 
+  rename(C = group) %>% 
+  mutate(pred2 = predicted - 2)
+
+ggplot() +                              # looks pretty good actually
+  geom_col(data = ARDrr_sum,
+           aes(x = Tr,
+               y = rrich.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.5) +
+  geom_col(data = predM3glmmr1 ,
+           aes(x = Tr,
+               y = pred2,
+               group = Tr),
+           colour = "black",
+           fill = "transparent",
+           size = 1.2) +
+  geom_errorbar(data = predM3glmmr1 ,
+                aes(x = Tr,
+                    ymin = pred2+std.error,
+                    ymax = pred2-std.error),
+                width = 0.3) +
+  geom_errorbar(data =ARDrr_sum,
+                aes(x = Tr,
+                    ymin = rrich.mean+rrich.sd,
+                    ymax = rrich.mean-rrich.sd),
+                width = 0.3) +
+  ggtitle("predicted richness (outline) over data (colour)") +
+  # ylim(-0.4,0.7) +
+  facet_grid(.~C) 
+
 # just data plotted w s.e.:
 ARDrr_sum <- ARD3rr %>% 
   group_by(Tr, C) %>% 
@@ -5965,8 +5986,8 @@ ggplot() +
                     ymax = rrich.mean-rrich.se),
                 width = 0.3) +
   scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
-  labs(x = expression(percent~living~coral),
-       y = expression(relative~richniess~(number~of~species))) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~richness~(number~of~species))) +
   facet_grid(.~C) +
   theme_classic() +
   theme(legend.position = "none")
@@ -5981,7 +6002,50 @@ ggplot()+
                alpha = 0.5) +
   facet_grid(.~C)
 
+ARDrr1_sum <- ARD3rr %>% 
+  group_by(Tr, C, days_since_outplanting) %>% 
+  summarize(rrich.mean = mean(rrich), rrich.sd = sd(rrich)) %>%
+  mutate(rrich.se = rrich.sd/sqrt(1280))
 
+ggplot() +
+  # geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  # geom_rect(data = ARD3rr,  mapping=aes(xmin=10, xmax=50, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  geom_hline(yintercept = 0,
+             linetype = "dashed",
+             colour = "grey40")+
+  theme_classic()+
+  # geom_vline(xintercept = 10,
+  #            linetype = "dashed",
+  #            colour = "grey40") +
+  # geom_point(data = ARD3ra,
+  #            aes(x = days_since_outplanting,
+  #                y = rabun,
+  #                colour = Tr),
+  #            alpha = 0.2) +
+  geom_point(data = ARDrr1_sum,
+             aes(x = days_since_outplanting,
+                 y = rrich.mean,
+                 group = Tr,
+                 colour = Tr),
+             size = 2.5) +
+  facet_grid(.~C) +
+  geom_line(data = ARDrr1_sum,
+            aes(x = days_since_outplanting,
+                y = rrich.mean,
+                group = Tr,
+                colour = Tr),
+            size = 1,
+            alpha = 0.8)+
+  geom_errorbar(data = ARDrr1_sum,
+                aes(x = days_since_outplanting,
+                    ymin = rrich.mean-rrich.se,
+                    ymax = rrich.mean+rrich.se,
+                    colour = Tr),
+                width = 0.15) +
+  scale_colour_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF"),name = "% living coral") +
+  labs(x = expression(Days),
+       y = expression(Relative~richness~(~number~of~species)))
+  # ylim(-4,6)
 
 
 #  MODEL SUMMARY TABLE - STARGAZER ----------------------------------------
@@ -5993,16 +6057,23 @@ library(stargazer)
 # lmmM1as
 
 summary(lmmM1as) # TOP MODEL - RELATIVE RECRUITMENT RATE
+summary(M3glmmTMBe1) #TOP MODEL - RELATIVE SATURATION DENSITY
+summary(glm.gam) #TOP MODEL - RELATIVE FINAL DENSITY (4-6)
+summary(M1glmmTMBr) #TOP MODEL - RELATIVE SPP RICHNESS
+M1 <- as.list(M1glmmTMBr) # not in a format to work with stargazer :( do last one manually in table output)
 
+stargazer(M1, type = "text")
+stargazer(M3glmmTMBe1, type = "text")
+stargazer(glm.gam, type = "text")
+# out = "my_table.doc", type="html",
 
-
-
-stargazer(lmmM1as, title = "Table 1. Model Resuls", 
-          type = "text",
-          dep.var.labels = "Relative Recruitment Rate",
+stargazer(lmmM1as,M3glmmTMBe1,glm.gam,
+          title = "Table 1. Model Resuls", 
+          out = "table1.doc", type = "html",
+          dep.var.labels = c("Relative Recruitment Rate", "Relative Saturation Density", "Relative Final Density"),
           intercept.bottom = FALSE,
           # order = c("Constant "),
-          covariate.labels = c("Low, 0% (intercept)","Low, 30%", "Low, 50%", "Low, 70%", "Low, 100%","High, 0%", "High, 30%", "High, 50%", "High, 70%", "High 100%"),
-          omit.stat = c("LL", "bic"),
-          dep.var.caption = "AR1 lmm")
+          covariate.labels = c("Low, 0% (intercept)","Low, 30%", "Low, 50%", "Low, 70%", "Low, 100%","High, 0%", "High, 30%", "High, 50%", "High, 70%", "High, 100%"),
+          omit.stat = c("LL", "bic"))
+          # dep.var.caption = "AR1 lmm", "glmm")
 # ci = TRUE, ci.level = 0.90)
