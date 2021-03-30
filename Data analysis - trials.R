@@ -934,7 +934,7 @@ ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv",
   dplyr::mutate(plot = as.factor(plot)) %>% 
   dplyr::rename(Tr = treatment) %>% 
   dplyr::rename(C = complexity) %>% 
-  dplyr::filter(visit != "1")
+  dplyr::filter(visit %in% c("1","2","3","4","5","6"))
 
 #checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
 
@@ -971,13 +971,14 @@ M1sc <- gls(rate~ structure*C, correlation = corCompSymm(form = ~ visit), data =
 
 # autoregressive var-cov matrix
 # M2sc <- gls(rate~ structure*C, correlation = corAR1(form = ~ visit|plot_grid), data= ARDrsc) #didn't work...
+M2sc <- gls(rate~ structure*C, correlation = corAR1(form = ~ 1|visit), data= ARDrsc)
 
 # autoregressie with heterogeneous variance var-cov matrixr
 M3sc <- gls(rate ~ structure*C, corr = corAR1(), weights = varIdent(form = ~ 1|visit), data = ARDrsc) #this one worked
 
-anova(M1sc, M3sc) #M3gls has best structure, unsurprising
+anova(M1sc, M2sc) #M3gls has best structure, unsurprising
 
-M3scresids <- resid(M3sc)
+M3scresids <- resid(M2sc)
 
 plot(M3sc, which = 1)
 hist(M3scresids)# yup looks normal
@@ -985,8 +986,8 @@ qqnorm(M3scresids) #looks just ok
 qqline(M3scresids)
 acf(M3scresids,na.action = na.pass, main = "autocorrelation plot for resids")
 
-boxplot(rrate~plot, data = ARDrr) # doesn't look like there's much going on here, there's 4 levels, the plots are on the same reef so not that far apart, may not end up being important is my guess
-boxplot(rrate~visit, data = ARDrr) # vury interesting, perhaps the autoregressive w het var-cov may actually makes sense looking at this! :)
+boxplot(rate~plot, data = ARDrsc) # doesn't look like there's much going on here, there's 4 levels, the plots are on the same reef so not that far apart, may not end up being important is my guess
+boxplot(rate~visit, data = ARDrsc) # vury interesting, perhaps the autoregressive w het var-cov may actually makes sense looking at this! :)
 
 #OK So the best autoregressive structure is M3gls, with autoregressive variance-covariance structure with heterogeneous variances
 #from her code:
@@ -994,36 +995,39 @@ boxplot(rrate~visit, data = ARDrr) # vury interesting, perhaps the autoregressiv
 # what does it mean? it means observations that are more proximate are correlated and variances change over time (obs. closer to each other are more similar)
 
 #Next: Check random effects with the correct autocorrelation structre (from M3gls) _________________________________________
-lmmM1sc <- lme(rate~structure*C, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc) #convergence issues
-lmmM2sc <- lme(rate~structure*C, random = ~1|plot/visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc) #convergence issues
-lmmM3sc <- lme(rate~structure*C, random = ~1|plot, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc) #convergence issues
+lmmM1sc <- lme(rate~structure*C, random = ~1|visit, correlation = corAR1(form = ~ 1|visit),data=ARDrsc) 
+# lmmM2sc <- lme(rate~structure*C, random = ~1|plot/visit, correlation = corAR1(form = ~ 1|visit),data=ARDrsc) #convergence issues
+# lmmM3sc <- lme(rate~structure*C, random = ~1|plot, correlation = corAR1(form = ~ 1|visit),data=ARDrsc) #convergence issues
+lmmM1sc2 <- lme(rate~structure*C, random = ~1|visit,data=ARDrsc)
+lmmM1sc3 <- lme(rate~structure*C, random = ~1|plot,data=ARDrsc)
 
-#ok so all of them had convergence issues
+#ok only lmmM1sc worked
 # compare lm to gls:
-AIC(M0sc, M3sc) #the gls one is better
+AIC(M2sc, lmmM1sc, lmmM1sc2, lmmM1sc3) #the one with visit nested in plot is best... but does it make sense? 
+# gls is the next best one, I think that makes the most sense, i don't have reason
 
 # now check if adding plot as a "nuissance" fixed effect matters__________________________________________________________
 
-lmsc <- lme(rate~structure*C + plot, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc)
-lmsc1 <- gls(rate~ structure*C + plot, data = ARDrsc)
+# lmsc <- lme(rate~structure*C + plot, random = ~1|visit, corr = corAR1(), weights = varIdent(form = ~ 1|visit),data=ARDrsc)
+# lmsc1 <- gls(rate~ structure*C + plot, data = ARDrsc)
 # getting Singularity error for both, I don't think plot matters...
 
 # so the gls model is the best fitting one because it takes temporal autocorrelation into account,
 
 # inspect models: _________________________________________________________________________________________________________
 
-# inspecting heteroscedacity of residuals - just lm
-H1a<-resid(M0sc,type="normalized")
-H2a<-fitted(M0sc)
+# inspecting heteroscedacity of residuals - lmm with ar1
+H1a<-resid(lmmM1sc,type="normalized")
+H2a<-fitted(lmmM1sc)
 par(mfrow=c(2,2))
 plot(x=H2a,y=H1a, xlab="fitted values", ylab="residuals")
 boxplot(H1a~visit, data=ARDrsc, main="visit",ylab="residuals")
 boxplot(H1a~structure, data=ARDrsc, main="treatment",ylab="residuals")
 boxplot(H1a~C, data=ARDrsc, main="complexity",ylab="residuals")
 
-# inspecting heteroscedacity of residuals - gls             #this one is better
-H1b<-resid(M3sc,type="normalized")
-H2b<-fitted(M3sc)
+# inspecting heteroscedacity of residuals - gls             
+H1b<-resid(M2sc,type="normalized")
+H2b<-fitted(M2sc)
 par(mfrow=c(2,2))
 plot(x=H2b,y=H1b, xlab="fitted values", ylab="residuals")
 boxplot(H1b~visit, data=ARDrsc, main="visit",ylab="residuals")
@@ -1039,24 +1043,22 @@ qqnorm(M0sc, main = "lm")
 
 acf(H1b,na.action = na.pass, main = "autocorrelation plot for resids gls")  
 
-anova(M3sc)
-car::Anova(M3sc) #not sig
-# Analysis of Deviance Table (Type II tests)
-# 
-# Response: rate
-# Df  Chisq Pr(>Chisq)
-# structure    1 0.0120     0.9129
-# C            1 0.1604     0.6888
-# structure:C  1 0.6338     0.4260
+summary(M2sc)
+summary(lmmM1sc)
 
-summary(M3sc)
+lmmM1scemm <- emmeans(lmmM1sc, pairwise ~ structure|C) #none sig
+pairs(lmmM1scemm)
+lmmM1scemm1 <- emmeans(lmmM1sc, pairwise ~ structure) #none sig
+pairs(lmmM1scemm1)
+lmmM1scemm2 <- emmeans(lmmM1sc, pairwise ~ C) #none sig
+pairs(lmmM1scemm2)
 
 # recruitment rate between H/L and structure N/Y is not significant when using gls with AR1 temporal regression structure
 
 # visualize: --------------------------------------------------------------
 
 # lmm
-predM3sc <- ggpredict(M3sc, terms = c("structure", "C")) %>% 
+predM3sc <- ggpredict(lmmM1sc, terms = c("structure", "C")) %>% 
   rename(structure = x) %>% 
   rename(C = group)
 
@@ -1092,7 +1094,7 @@ ggplot() +
 ARDrsc_sum <- ARDrsc %>% 
   group_by(structure, C) %>% 
   summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
-  mutate(rate.se = rate.sd/sqrt(1440))
+  mutate(rate.se = rate.sd/sqrt(576))
 
 ggplot() +
   geom_col(data = ARDrsc_sum,
@@ -1113,8 +1115,8 @@ ggplot() +
   # facet_grid(.~C) +
   theme_classic() +
   theme(legend.position = "none") +
-facet_grid(.~C) +
-  ylim(-0.02,0.15)
+facet_grid(.~C)
+  # ylim(-0.02,0.15)
 
 
 
@@ -3754,6 +3756,8 @@ ARDrrs1 <- ARD_3_relrate %>%
 
 hist(ARDrrs$rrate)
 
+describeBy(ARDrrs, group=list(ARDrrs$Tr, ARDrrs$C))
+
 # NOTE: Now that I'm using just the first few visits, may not need to use correlation structure? 
 
 M0glss <- gls(rrate~ Tr*C, data = ARDrrs) #just a lm
@@ -3798,6 +3802,11 @@ acf(M2glsresidss,na.action = na.pass, main = "autocorrelation plot for resids")
 boxplot(rrate~plot, data = ARDrrs) # looks fine
 boxplot(rrate~visit, data = ARDrrs) # evenly variable now
 
+ggplot(data = ARDrrs) +
+  geom_boxplot(aes(x = visit,
+                   y = rrate))
+
+
 #OK So the best autoregressive structure is M2gls, with autoregressive variance-covariance structure and homogeneous variances
 #so observations closer together are more similar
 
@@ -3824,8 +3833,10 @@ summary(lmmM1bs)
 
 lmmM1aemm2s <- emmeans(lmmM1as, pairwise ~ Tr|C) #none sig
 pairs(lmmM1aemm2s)
-lmmM1aemm2sb <- emmeans(lmmM1bs, pairwise ~ Tr|C) #none sig
-pairs(lmmM1aemm2sb)
+lmmM1aemm2s1 <- emmeans(lmmM1as, pairwise ~ Tr) #none sig
+pairs(lmmM1aemm2s1)
+lmmM1aemm2s2 <- emmeans(lmmM1as, pairwise ~ C) #none sig
+pairs(lmmM1aemm2s2)
 
 # inspect models: _________________________________________________________________________________________________________
 
@@ -3866,7 +3877,7 @@ predlmmM1as <- ggpredict(lmmM1as, terms = c("Tr", "C")) %>%
   rename(C = group)
 
 ggplot() +
-  geom_col(data = ARDrs_sum,
+  geom_col(data = ARDrrs_sum,
            aes(x = Tr,
                y = rrate.mean,
                group = Tr,
@@ -3932,20 +3943,25 @@ ggplot() +
 
 
 # just data plotted w s.e.:
-ARDrs_sum <- ARDrrs %>% 
+ARDrrs_sum <- ARDrrs %>% 
   group_by(Tr, C) %>% 
   # filter(visit != "1") %>% #n = 400
   summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
   mutate(rrate.se = rrate.sd/sqrt(640))
 
+ARDrrs_sumc <- ARDrrs %>% 
+  group_by(C) %>% 
+  summarize(rrate.mean = mean(rrate), rrate.sd = sd(rrate)) %>%
+  mutate(rrate.se = rrate.sd/sqrt(640))
+
 ggplot() +
-  geom_col(data = ARDrs_sum,
+  geom_col(data = ARDrrs_sum,
            aes(x = Tr,
                y = rrate.mean,
                group = Tr,
                fill = Tr),
            alpha = 0.9) +
-  geom_errorbar(data =ARDrs_sum,
+  geom_errorbar(data =ARDrrs_sum,
                 aes(x = Tr,
                     ymin = rrate.mean+rrate.se,
                     ymax = rrate.mean-rrate.se),
@@ -3958,6 +3974,8 @@ ggplot() +
   theme(legend.position = "none")
   # ylim(-0.13,0.2)
 # facet_grid(.~C) 
+
+dev.off()
 
 # plot rate over whole time period
 
@@ -4684,11 +4702,10 @@ AIC(lm.0, glm.gam, glmm.gam1) # glm is the best, but glmm is only 1 AIC value ab
 summary(glm.gam)
 summary(glmm.gam1)
 
-glm.gamemm4 <- emmeans(glm.gam, pairwise ~ Tr|C)
-pairs(glm.gamemm4)
-glmm.gamemm4 <- emmeans(glmm.gam1, pairwise ~ Tr|C) #just 70 and 50 H
+
+glmm.gamemm4 <- emmeans(glmm.gam1, pairwise ~ Tr|C) #just 70 and 50 H, t.ratio, -2.782  0.0431
 pairs(glmm.gamemm4)
-glmm.gamemm3 <- emmeans(glmm.gam1, pairwise ~ C) 
+glmm.gamemm3 <- emmeans(glmm.gam1, pairwise ~ C) #sig,z-ratio 3.063,p= 0.0022
 pairs(glmm.gamemm3)
 glmm.gamemm2 <- emmeans(glmm.gam1, pairwise ~ Tr) 
 pairs(glmm.gamemm2)
@@ -4759,6 +4776,11 @@ ggplot() +
   theme_classic() +
   theme(legend.position = "none")
 
+
+ARD4f_sum1 <- ARD4f %>%
+  group_by(C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(240))
 
 # just data
 ARD4f_sum <- ARD4f %>%
@@ -4832,6 +4854,7 @@ ggplot() +
   labs(x = expression(Days),
        y = expression(Relative~density~(~fish~m^{2}))) +
   ylim(-4,6)
+
 
 # C. RELATIVE DENSITY (WHOLE STUDY) ---------------------------------------
 
@@ -5723,6 +5746,7 @@ ggplot() +
 
 #data:
 
+
 ARDrae_sum <- ARD3rae %>% 
   group_by(Tr, C) %>% 
   summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
@@ -5745,8 +5769,33 @@ ggplot() +
        y = expression(Relative~fish~density~(~fish~m^{2}))) +
   facet_grid(.~C) +
   theme_classic() +
+  theme(legend.position = "none") +
+  ylim(-1.5,3)
+
+# just complexity
+ARDrae_sum1 <- ARD3rae %>% 
+  group_by(C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun)) %>%
+  mutate(rabun.se = rabun.sd/sqrt(800))
+
+ggplot() +
+  geom_col(data = ARDrae_sum1,
+           aes(x = C,
+               y = rabun.mean,
+               group = C,
+               fill = C),
+           alpha = 0.9) +
+  geom_errorbar(data =ARDrae_sum1,
+                aes(x = C,
+                    ymin = rabun.mean+rabun.se,
+                    ymax = rabun.mean-rabun.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("grey50", "#40B0A6")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~fish~density~(~fish~m^{2}))) +
+  # facet_grid(.~C) +
+  theme_classic() +
   theme(legend.position = "none")
-  # ylim(-1.1,3.5)
 
 # density over time: (0-3) (all visits)
 
@@ -5850,11 +5899,11 @@ M1glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|visit), family=Gamma(link="log"), data = 
 M2glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
 M3glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) #both visit and plot as re
 
-M0glmmTMBr1 <- glmer(rrich1~Tr*C, family=Gamma(link="log"), data = ARD3rr1)
-M1glmmTMBr1 <- glmer(rrich1~Tr*C + (1|visit), family=Gamma(link = "inverse"), data = ARD3rr1) #just visit as re
-M2glmmTMBr1 <- glmer(rrich1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
-M3glmmTMBr1 <- glmer(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) 
-M4glmmTMBr1 <- glm(rrich1~Tr*C, family = Gamma(), data = ARD3rr1) #just glm
+# M0glmmTMBr1 <- glmer(rrich1~Tr*C, family=Gamma(link="log"), data = ARD3rr1)
+# M1glmmTMBr1 <- glmer(rrich1~Tr*C + (1|visit), family=Gamma(link = "inverse"), data = ARD3rr1) #just visit as re
+# M2glmmTMBr1 <- glmer(rrich1~Tr*C + (1|plot), family=Gamma(link="log"), data = ARD3rr1) #just plot sa re
+# M3glmmTMBr1 <- glmer(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log"), data = ARD3rr1) 
+# M4glmmTMBr1 <- glm(rrich1~Tr*C, family = Gamma(), data = ARD3rr1) #just glm
 
 AIC(M0glmmTMBr, M1glmmTMBr, M2glmmTMBr, M3glmmTMBr) #M1 is the best, visit as re
 AIC(M1glmmTMBr1,M4glmmTMBr1) #just visit as re, M1glmmTMBr1
@@ -5865,9 +5914,9 @@ summary(M1glmmTMBr1)
 
 M1glmmTMBremm <- emmeans(M1glmmTMBr, pairwise ~ Tr) 
 pairs(M1glmmTMBremm)
-M1glmmTMBremm1 <- emmeans(M1glmmTMBr, pairwise ~ C) #  0.0002
+M1glmmTMBremm1 <- emmeans(M1glmmTMBr, pairwise ~ C) #  t ratio 8.237, p=   <.0001 
 pairs(M1glmmTMBremm1)
-M1glmmTMBremm2 <- emmeans(M1glmmTMBr, pairwise ~ Tr|C) 
+M1glmmTMBremm2 <- emmeans(M1glmmTMBr, pairwise ~ Tr|C) # 30 and 100 L tratio -3.047, p =0.0199
 pairs(M1glmmTMBremm2)
 M1glmmTMBremm3 <- emmeans(M1glmmTMBr1, pairwise ~ Tr|C) 
 pairs(M1glmmTMBremm3)
@@ -5967,6 +6016,15 @@ ggplot() +                              # looks pretty good actually
   # ylim(-0.4,0.7) +
   facet_grid(.~C) 
 
+
+
+
+
+ARDrr_sum1 <- ARD3rr %>% 
+  group_by(C) %>% 
+  summarize(rrich.mean = mean(rrich), rrich.sd = sd(rrich)) %>%
+  mutate(rrich.se = rrich.sd/sqrt(1280))
+
 # just data plotted w s.e.:
 ARDrr_sum <- ARD3rr %>% 
   group_by(Tr, C) %>% 
@@ -5990,8 +6048,8 @@ ggplot() +
        y = expression(Relative~richness~(number~of~species))) +
   facet_grid(.~C) +
   theme_classic() +
-  theme(legend.position = "none")
-  # ylim(-0.1,1.2)
+  theme(legend.position = "none") +
+  ylim(-0.1,1.2)
 
 ggplot()+
   geom_boxplot(data = ARD3rr,
