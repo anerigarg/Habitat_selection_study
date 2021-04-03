@@ -2,6 +2,9 @@
 
 # packages and palletes ---------------------------------------------------
 
+install.packages("rlang")
+remove.packages("rlang")
+
 library(viridis)
 library(PNWColors)
 library(tidyverse)
@@ -13,6 +16,8 @@ library(DHARMa)
 library(emmeans)
 library(nlme)
 library(lme4)
+library(psych)
+library(car)
 
 `%notin%` = negate(`%in%`)
 write.csv(name, "name.csv", row.names = FALSE)
@@ -44,7 +49,7 @@ ARD_3_rate <- read_csv("data/rate calculations/ARD_3_rate.csv",
   dplyr::mutate(plot = as.factor(plot)) %>% 
   dplyr::rename(Tr = treatment) %>% 
   dplyr::rename(C = complexity) %>% 
-  dplyr::filter(visit != "1")
+  dplyr::filter(visit %in% c("1","2","3","4","5","6")) 
 
 #checks out, 1440 observations (24 clusters * 4 plots * 15 visits)
 
@@ -53,16 +58,18 @@ ARDrbc <- ARD_3_rate %>%
 
 #check normality: 
 hist(ARDrbc$rate) #normalish, a few v big or small responses, not surprising given variability in recruitment rate
-shapiro.test(ARDrbc$rate) # nope, p-value = 9.134e-14
-range(ARDrbc$rate) #-7.6 to 7
+shapiro.test(ARDrbc$rate) # nope, p-value = 8.301e-08
+range(ARDrbc$rate) #-7 to 7
 
 # homogeneity of variance
 boxplot(rate~plot, data = ARDrbc) #hmm may have some spatial cor
 boxplot(rate~visit, data = ARDrbc) #not as extreme cheese wedge, but still there
 boxplot(rate~C, data = ARDrbc) # looks hetero
-leveneTest(ARDrbc$rate, ARDrbc$C) # nope, 0.00145 **
+leveneTest(ARDrbc$rate, ARDrbc$C) # nope guess it's not? p =  0.1787
 
 describeBy(ARDrbc, group=ARDrbc$C) 
+# Low: 0.14, sd =  1.80 
+# High: 0.10, sd =  2.21
 
 
 # ok but assumptions matter more if you have unequal sample sizes (this one is equal)
@@ -74,6 +81,9 @@ describeBy(ARDrbc, group=ARDrbc$C)
 
 ttest.rbc <- t.test(ARDrbc$rate ~ ARDrbc$C, var.equal=FALSE)
 ttest.rbc
+summary(ttest.rbc)
+# t = 0.075958, df = 90.408, p-value = 0.9396, not sig differeint
+
 
 # You can visualize the test results using boxplots. Run the command:
 boxplot(ARDrbc$rate ~ ARDrbc$C, ylim=c(-10,10))
@@ -100,7 +110,7 @@ wilcox.test(ARDrbc$rate ~ ARDrbc$C)
 ARDrbc_sum <- ARDrbc %>% 
   group_by(C) %>% 
   summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
-  mutate(rate.se = rate.sd/sqrt(240))
+  mutate(rate.se = rate.sd/sqrt(96))
 
 ggplot() +
   geom_col(data = ARDrbc_sum,
@@ -118,6 +128,32 @@ ggplot() +
   labs(x = expression(Background~complexity),
        y = expression(Recruitment~rate~(~fish~m^{2}~d^{1}))) +
   # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+# data - facet by plot
+ARDrbc_sum2 <- ARDrbc %>% 
+  group_by(plot, C) %>% 
+  summarize(rate.mean = mean(rate), rate.sd = sd(rate)) %>%
+  mutate(rate.se = rate.sd/sqrt(96))
+
+ggplot() +
+  geom_col(data = ARDrbc_sum2,
+           aes(x = plot,
+               y = rate.mean,
+               group = C,
+               fill = C),
+           alpha = 0.9,
+           position = "dodge") +
+  geom_errorbar(data =ARDrbc_sum2,
+                aes(x = plot,
+                    ymin = rate.mean+rate.se,
+                    ymax = rate.mean-rate.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Recruitment~rate~(~fish~m^{2}~d^{1}))) +
+  facet_grid(.~C,scales = "free", space = "free") +
   theme_classic() +
   theme(legend.position = "none")
 
@@ -280,13 +316,38 @@ ggplot() +
   theme_classic() +
   theme(legend.position = "none")
 
+#data - facet by plot
+# data
+ARD4bc_sum2 <- ARD4bc %>% 
+  group_by(plot, C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(48))
+
+ggplot() +
+  geom_col(data = ARD4bc_sum2,
+           aes(x = plot,
+               y = dens.mean,
+               group = C,
+               fill = C),
+           alpha = 0.9) +
+  geom_errorbar(data =ARD4bc_sum2,
+                aes(x = plot,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Final~density~(~fish~m^{2}))) +
+  facet_grid(.~C,scales = "free", space = "free") +
+  theme_classic() +
+  theme(legend.position = "none")
 
 
 
 # C. OVERALL DENSITY ------------------------------------------------------
 
 
-ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
+ARD_3d <- read_csv("data/filter 0 values/ARD_3.csv") %>% 
   dplyr::mutate(treatment = factor(treatment, levels = c("control", "0%", "30%", "50%", "70%", "100%"))) %>% 
   dplyr::mutate(complexity = factor(complexity, levels = c("Low", "High"))) %>% 
   dplyr::mutate(visit = factor(days_since_outplanting, levels = c('1', '2','3','5','7','9','11','13','18','23','26','30','33','37','43','48'),
@@ -294,36 +355,34 @@ ARD_3 <- read_csv("data/filter 0 values/ARD_3.csv") %>%
   dplyr::mutate(density = as.numeric(abundance)) %>% 
   dplyr::mutate(plot = as.factor(plot)) %>% 
   dplyr::rename(Tr = treatment) %>% 
-  dplyr::rename(C = complexity)
+  dplyr::rename(C = complexity) %>% 
+  filter(visit %in% c("7", "8","9","10","11","12","13","14","15","16"))
 
 
 #checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
 
-ARD3bc <- ARD_3 %>% 
-  filter(Tr == "control") %>% 
-  mutate(density1 = sqrt(density)) %>% 
-  mutate(density2 = log(density)) %>% 
-  mutate(density3 = Math.cbrt(density))
+ARD3bc <- ARD_3d %>% 
+  filter(Tr == "control") # n = 160
 
 
 #check normality: 
 hist(ARD3bc$density) #that's a neg binom
-hist(ARD3bc$density1)
-hist(ARD3bc$density2) 
-hist(ARD3bc$density3) #they all kind of suck, maybe a non-parametric test right away?
+# hist(ARD3bc$density1)
+# hist(ARD3bc$density2) 
+# hist(ARD3bc$density3) #they all kind of suck, maybe a non-parametric test right away?
 
-shapiro.test(ARD3bc$density) # nope, p-value = 8.086e-08
-shapiro.test(ARD3bc$density3)
+shapiro.test(ARD3bc$density) # nope, p-value =  < 2.2e-16
+# shapiro.test(ARD3bc$density3)
 range(ARD4bc$density) #0 to 13
 
 # homogeneity of variance
-boxplot(density~plot, data = ARD3bc) #quite a bit of variation bw HS and HN
+boxplot(density~plot, data = ARD3bc) 
 boxplot(density~visit, data = ARD3bc) 
 boxplot(density~C, data = ARD3bc) # looks hetero
-leveneTest(ARD3bc$density, ARD3bc$C) #hetero, 0.0006589 ***
+leveneTest(ARD3bc$density, ARD3bc$C) #hetero, 0.008225 **
 
 describeBy(ARD3bc, group=ARD3bc$C) 
-# mean density for Low is  1.48 (SD = 2.14) and mean density for High is 2.76 (SD = 3.42)
+# mean density for Low is  1.68   2.05 and mean density for High is 3.08   3.81 
 # Low median is 1, H median is 2
 
 # option 1) t.test --------------------------------------------------------
@@ -348,6 +407,8 @@ ttest.3bc1
 w3bc <- wilcox.test(ARD3bc$density ~ ARD3bc$C)
 # overall recruit density is significantly different between High and Low complexity  (W = 6214, p-value = 0.0006028)
 w3bc
+# W = 2460, p-value = 0.01001
+
 
 # visualise:  -------------------------------------------------------------
 
@@ -356,7 +417,7 @@ w3bc
 ARD3bc_sum <- ARD3bc %>% 
   group_by(C) %>% 
   summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
-  mutate(dens.se = dens.sd/sqrt(256))
+  mutate(dens.se = dens.sd/sqrt(160))
 
 ggplot() +
   geom_col(data = ARD3bc_sum,
@@ -377,8 +438,30 @@ ggplot() +
   theme_classic() +
   theme(legend.position = "none")
 
+#facet by plot
+ARD3bc_sum2 <- ARD3bc %>% 
+  group_by(plot,C) %>% 
+  summarize(dens.mean = mean(density), dens.sd = sd(density)) %>%
+  mutate(dens.se = dens.sd/sqrt(160))
 
-
+ggplot() +
+  geom_col(data = ARD3bc_sum2,
+           aes(x = plot,
+               y = dens.mean,
+               group = C,
+               fill = C),
+           alpha = 0.9) +
+  geom_errorbar(data =ARD3bc_sum2,
+                aes(x = plot,
+                    ymin = dens.mean+dens.se,
+                    ymax = dens.mean-dens.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Mean~density~(~fish~m^{2}))) +
+  facet_grid(.~C,scales = "free", space = "free") +
+  theme_classic() +
+  theme(legend.position = "none")
 
 
 # D. RICHNESS ----------------------------------------------------
@@ -395,10 +478,10 @@ ARD_3_rich <- read_csv("data/filter 0 values/ARD_3_rich.csv") %>%
 #checks out, 1536 observations (24 clusters * 4 plots * 16 visits)
 
 ARD3bcr <- ARD_3_rich %>% 
-  filter(Tr == "control") %>% 
-  mutate(rich1 = sqrt(rich)) %>% 
-  mutate(rich2 = log(rich)) %>% 
-  mutate(rich3 = Math.cbrt(rich))
+  filter(Tr == "control")
+  # mutate(rich1 = sqrt(rich)) %>% 
+  # mutate(rich2 = log(rich)) %>% 
+  # mutate(rich3 = Math.cbrt(rich))
 
 
 #check normality: 
@@ -433,6 +516,7 @@ ttest.3bcr
 w3bcr <- wilcox.test(ARD3bcr$rich ~ ARD3bcr$C)
 # species richness is not significantly different between High and Low complexity  (W = 7707.5, p-value = 0.3821)
 w3bcr
+# W = 7707.5, p-value = 0.3821
 
 # visualise:  -------------------------------------------------------------
 
@@ -459,6 +543,31 @@ ggplot() +
   labs(x = expression(Background~complexity),
        y = expression(Richness~(~number~of~species))) +
   # facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+
+#facet by plot
+ARD3bcr_sum2 <- ARD3bcr %>% 
+  group_by(plot, C) %>% 
+  summarize(rich.mean = mean(rich), rich.sd = sd(rich)) %>%
+  mutate(rich.se = rich.sd/sqrt(256))
+
+ggplot() +
+  geom_col(data = ARD3bcr_sum2,
+           aes(x = plot,
+               y = rich.mean,
+               group = C,
+               fill = C),
+           alpha = 0.9) +
+  geom_errorbar(data =ARD3bcr_sum2,
+                aes(x = plot,
+                    ymin = rich.mean+rich.se,
+                    ymax = rich.mean-rich.se),
+                width = 0.3) +
+  scale_fill_manual(values = c("#005AB5", "#DC3220")) +
+  labs(x = expression(Background~complexity),
+       y = expression(Richness~(~number~of~species))) +
+  facet_grid(.~C,scales = "free", space = "free") +
   theme_classic() +
   theme(legend.position = "none")
 
@@ -3804,7 +3913,11 @@ boxplot(rrate~visit, data = ARDrrs) # evenly variable now
 
 ggplot(data = ARDrrs) +
   geom_boxplot(aes(x = visit,
-                   y = rrate))
+                   y = rrate)) +
+  theme_classic()+
+  labs(x = expression(visit),
+       y = expression(Relative~recruitment~rate~(~fish~m^{2}~d^{1})))
+  
 
 
 #OK So the best autoregressive structure is M2gls, with autoregressive variance-covariance structure and homogeneous variances
@@ -3837,6 +3950,8 @@ lmmM1aemm2s1 <- emmeans(lmmM1as, pairwise ~ Tr) #none sig
 pairs(lmmM1aemm2s1)
 lmmM1aemm2s2 <- emmeans(lmmM1as, pairwise ~ C) #none sig
 pairs(lmmM1aemm2s2)
+lmmM1aemm2s3 <- emmeans(lmmM1as, pairwise ~ C|Tr, type = "response") #none sig
+pairs(lmmM1aemm2s3)
 
 # inspect models: _________________________________________________________________________________________________________
 
@@ -3867,7 +3982,29 @@ qqline(H1a)
 qqnorm(H1b, main = "just gls")  # just gls better
 qqline(H1b)
 
+#__dharma_____________________________________________________________________________________________________________
 
+testDispersion(lmmM1as)
+# p > 0.05, not oversdispersed, p-value = 0.616
+
+simoutlmmM1as <- simulateResiduals(fittedModel =lmmM1as, plot = T) #this looks crap
+simouttmb3r <- simulateResiduals(fittedModel =M1glmmTMBr, plot = T) # wow this looks great
+simouttmb3r2 <- simulateResiduals(fittedModel =M3glmmTMBr, plot = T) # the one with visit and plot as re also looks good (if u decide to use this)
+
+residuals(simouttmb3r)
+plot(simouttmb3r) # lots of issues in qq: lack onf uniformity, outliers and dispersion
+# residuals plots plots resudlas against predicted value. simulation outliers have red stars (don't kow how much they deviate from model expectations)
+
+plotResiduals(simouttmb3r, ARD3rr1$Tr) #looks good
+plotResiduals(simouttmb3r, ARD3rr1$C) #looks good
+hist(simouttmb3r) # I think just ok, but outlier test is non-sig so not too worried 
+
+#goodness of fit tests
+testResiduals(simouttmb3r)   ## these are displayed on the plots
+# calculates 3 tests: 
+# 1) testUniformity: if overall distribution conforms to expectations         # non sig, p-value = 0.6721
+# 2) testOutliers: if there are more simulation outliers than expected        # non sig, p = 1
+# 3) testDispersion: if sumulated dispersion is equal to observed dispersion  # non sig, p-value = 0.616
 
 # ___________________________________plot model results over data ____________________________________________________
 library(ggeffects)
@@ -4695,20 +4832,24 @@ glm.gam <- glm(rabun1~Tr*C, family = Gamma(), data = ARD4f1) # gamma glm
 glmm.gam1 <- glmer(rabun1~Tr*C + (1|visit), family = Gamma(link="log"), data = ARD4f1) #gamm glmm visit as re
 # glmm.gam2 <- glmer(rabun1~Tr*C + (1|visit) + (1|plot), family = Gamma(link="log"), data = ARD4f1) #gamma glmm plot and visit as re
 
+
 #is Singular error for both the models with plot
 
 AIC(lm.0, glm.gam, glmm.gam1) # glm is the best, but glmm is only 1 AIC value above
+# on second thought, I don't think I should include visit as a re since there are only 3 variables and that's not considered good practice
+# (Bolker et al 2009)
 
-summary(glm.gam)
+summary(glm.gam) #use this
 summary(glmm.gam1)
 
-
-glmm.gamemm4 <- emmeans(glmm.gam1, pairwise ~ Tr|C) #just 70 and 50 H, t.ratio, -2.782  0.0431
+glmm.gamemm4 <- emmeans(glmm.gam1, pairwise ~ Tr|C) #just 70 and 50 H, z=  -2.782, p =  0.0431
 pairs(glmm.gamemm4)
-glmm.gamemm3 <- emmeans(glmm.gam1, pairwise ~ C) #sig,z-ratio 3.063,p= 0.0022
+glmm.gamemm3 <- emmeans(glmm.gam1, pairwise ~ C) #sig,z =  3.063,p= 0.0022
 pairs(glmm.gamemm3)
 glmm.gamemm2 <- emmeans(glmm.gam1, pairwise ~ Tr) 
 pairs(glmm.gamemm2)
+glmm.gamemm5 <- emmeans(glmm.gam1, pairwise ~ C|Tr) # 30% (z = 2.028, p = 0.0425), 50% (z = 2.183, p = 0.0290)
+pairs(glmm.gamemm5)
 
 #dispersion test
 testDispersion(glmm.gam1)
@@ -4805,8 +4946,8 @@ ggplot() +
        y = expression(Relative~fish~density~(~fish~m^{2}))) +
   facet_grid(.~C) +
   theme_classic() +
-  theme(legend.position = "none")
-  # ylim(-0.4,0.7) +
+  theme(legend.position = "none") +
+  ylim(-1,2.5)
 
 
 
@@ -4817,7 +4958,7 @@ ARD4f_sum1 <- ARD4f1 %>%
 
 ggplot() +
   # geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
-  geom_rect(data = ARD4f,  mapping=aes(xmin=0, xmax=37, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
+  geom_rect(data = ARD4f,  mapping=aes(xmin=37, xmax=50, ymin=-4, ymax=6),fill = "grey90", alpha=0.1) +
   geom_hline(yintercept = 0,
              linetype = "dashed",
              colour = "grey40")+
@@ -5685,6 +5826,17 @@ M3glmmTMBeemm1 <- emmeans(M3glmmTMBe, pairwise ~ Tr) #0-50 sig (regarless of bac
 pairs(M3glmmTMBeemm1) 
 M3glmmTMBeemm2 <- emmeans(M3glmmTMBe, pairwise ~ C) #sig
 pairs(M3glmmTMBeemm2) 
+M3glmmTMBeemm3 <- emmeans(M3glmmTMBe, pairwise ~ C|Tr, type = "response") # 0% (t = 2.41, p = 0.0162), 30% (t = 3.548, p = 0.0004), 50% (t = 3.786, p = 0.0002), 70% (t = 3.606, p = 0.0003), 100% (t = 4.758, p = <.0001)
+pairs(M3glmmTMBeemm3) 
+
+M3glmmTMBeemm1 <- emmeans(M3glmmTMBe1, pairwise ~ Tr | C) #only 0-50 in H... weird
+pairs(M3glmmTMBeemm1) 
+M3glmmTMBeemm11 <- emmeans(M3glmmTMBe1, pairwise ~ Tr) #0-50 sig (regarless of background)
+pairs(M3glmmTMBeemm11) 
+M3glmmTMBeemm21 <- emmeans(M3glmmTMBe1, pairwise ~ C) #sig
+pairs(M3glmmTMBeemm21) 
+M3glmmTMBeemm31 <- emmeans(M3glmmTMBe1, pairwise ~ C|Tr, type = "response") # 0% (t = 2.41, p = 0.0162), 30% (t = 3.548, p = 0.0004), 50% (t = 3.786, p = 0.0002), 70% (t = 3.606, p = 0.0003), 100% (t = 4.758, p = <.0001)
+pairs(M3glmmTMBeemm31) 
 
 #___________________________________model assessment with dharma___________________________________________________
 
@@ -5693,6 +5845,7 @@ testDispersion(M3glmmTMBe)
 # p-value = 0.12, not overdispersed
 
 simoutM3glmmTMBe <- simulateResiduals(fittedModel = M3glmmTMBe, plot = T)
+simoutM3glmmTMBe1 <- simulateResiduals(fittedModel = M3glmmTMBe1, plot = T)
 
 plotResiduals(M3glmmTMBe, ARD3ra1e$Tr)
 plotResiduals(M3glmmTMBe, ARD3ra1e$C)
@@ -5707,10 +5860,11 @@ testResiduals(simoutM3glmmTMBe)   ## these are displayed on the plots
 
 #______________________________________visualise____________________________________________________________________
 
-predM3glmmTMBe <- ggpredict(M3glmmTMBe1, terms = c("Tr", "C")) %>% 
+predM3glmmTMBe <- ggpredict(M3glmmTMBe1, terms = c("Tr", "C")) %>%  #not taking into account re
   rename(Tr = x) %>% 
   rename(C = group) %>% 
-  mutate(pred6 = predicted - 6)
+  mutate(pred6 = predicted - 6) %>% 
+  mutate(stde2 = std.error*1.96)
 
 ggplot() +
   geom_col(data = ARDrae_sum,
@@ -5733,9 +5887,9 @@ ggplot() +
   #               width = 0.3) +
   geom_errorbar(data = predM3glmmTMBe ,
                 aes(x = Tr,
-                    ymin = pred6-std.error,
-                    ymax = pred6+std.error),
-                width = 0.3) +
+                    ymin = pred6-stde2,
+                    ymax = pred6+stde2,
+                width = 0.3)) +
   labs(x = expression(Percent~living~coral),
        y = expression(Relative~fish~density~(~fish~m^{2}))) +
   facet_grid(.~C) +
@@ -5770,7 +5924,8 @@ ggplot() +
   facet_grid(.~C) +
   theme_classic() +
   theme(legend.position = "none") +
-  ylim(-1.5,3)
+  ylim(-1.5,4)
+
 
 # just complexity
 ARDrae_sum1 <- ARD3rae %>% 
@@ -5846,6 +6001,60 @@ ggplot() +
   ylim(-4,6)
   # geom_rect(data = ARD3ra,  mapping=aes(xmin=0, xmax=10, ymin=-4, ymax=6), alpha=0.1)
 
+#just data with 95% CIs:
+ARDrae_sum2 <- ARD3rae %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun), rabun.n = n()) %>%
+  mutate(rabun.se = rabun.sd/sqrt(800),
+         lower.ci = rabun.mean - qt(1-(0.05/2), rabun.n - 1)* rabun.se, 
+         upper.ci = rabun.mean + qt(1- (0.05/2), rabun.n - 1)* rabun.se)
+
+ARDrae_sum3 <- ARD3rae %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun), rabun.n = n()) %>%
+  mutate(rabun.se = rabun.sd/sqrt(800),
+         lower.ci = qt(1-(0.05), rabun.n - 1)* rabun.se, 
+         upper.ci = qt(1- (0.05), rabun.n - 1)* rabun.se)
+
+
+ARDrae_sum4 <- ARD3rae %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun), rabun.n = n()) %>%
+  mutate(rabun.se = rabun.sd/sqrt(800),
+         lower.ci = 1.96* rabun.se, 
+         upper.ci = 1.96* rabun.se)
+
+ARDrae_sum5 <- ARD3rae %>% 
+  group_by(Tr, C) %>% 
+  summarize(rabun.mean = mean(rabun), rabun.sd = sd(rabun), rabun.n = n()) %>%
+  mutate(rabun.se = rabun.sd/sqrt(800),
+         lower.ci = qt(1-(0.05), rabun.n - 1), 
+         upper.ci = qt(1- (0.05), rabun.n - 1))
+
+install.packages("rmisc")
+library(rmisc)
+
+
+
+ggplot() +
+  geom_col(data = ARDrae_sum4,
+           aes(x = Tr,
+               y = rabun.mean,
+               group = Tr,
+               fill = Tr),
+           alpha = 0.9) +
+  geom_errorbar(data =ARDrae_sum4,
+                aes(x = Tr,
+                    ymin = rabun.mean-lower.ci,
+                    ymax = rabun.mean+upper.ci),
+                width = 0.3) +
+  scale_fill_manual(values = c("#FFB000", "#FE6100", "#DC267F", "#785EF0", "#648FFF")) +
+  labs(x = expression(Percent~living~coral),
+       y = expression(Relative~fish~density~(~fish~m^{2}))) +
+  facet_grid(.~C) +
+  theme_classic() +
+  theme(legend.position = "none")
+  # ylim(-1.5,4)
 
 
 # D. RICHNESS ----------------------------------------------------
@@ -5878,6 +6087,7 @@ boxplot(rrich~Tr, data = ARD3rr)
 
 ARD3rr1 <- ARD3rr %>% 
   mutate(rrich1 = rrich + 2)
+hist(ARD3rr1$rrich1)
 
 # assess gamma over data distribution ________________________________________________________________________________________
 
@@ -5908,7 +6118,7 @@ M3glmmTMBr <- glmmTMB(rrich1~Tr*C + (1|plot) + (1|visit), family=Gamma(link="log
 AIC(M0glmmTMBr, M1glmmTMBr, M2glmmTMBr, M3glmmTMBr) #M1 is the best, visit as re
 AIC(M1glmmTMBr1,M4glmmTMBr1) #just visit as re, M1glmmTMBr1
 
-dcar::Anova(M1glmmTMBr)
+car::Anova(M1glmmTMBr)
 summary(M1glmmTMBr)
 summary(M1glmmTMBr1)
 
@@ -5918,7 +6128,7 @@ M1glmmTMBremm1 <- emmeans(M1glmmTMBr, pairwise ~ C) #  t ratio 8.237, p=   <.000
 pairs(M1glmmTMBremm1)
 M1glmmTMBremm2 <- emmeans(M1glmmTMBr, pairwise ~ Tr|C) # 30 and 100 L tratio -3.047, p =0.0199
 pairs(M1glmmTMBremm2)
-M1glmmTMBremm3 <- emmeans(M1glmmTMBr1, pairwise ~ Tr|C) 
+M1glmmTMBremm3 <- emmeans(M1glmmTMBr1, pairwise ~ C|Tr) 
 pairs(M1glmmTMBremm3)
 
 # model assessment with dharma__________________________________________________________________________________________________
