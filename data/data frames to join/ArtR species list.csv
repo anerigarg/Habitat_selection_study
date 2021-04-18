@@ -1,0 +1,90 @@
+SpeciesCode,CommonName,SpeciesName,Genus,Family,Order,MaxLength,TrophicLevel,a,b,MajorTrophicGroup,SubTrophicGroup,BehaviouralGroup,MedianPopDblTime,FishingStatus,log a,L inf,L-W parameter source,L-W region
+409-01-02,Blue Tang,Acanthurus coeruleus,Acanthurus,Acanthuridae,Perciformes,39,2,0.0305,3,Herbivore,Roving Herbivore,,,Minor commercial,-4.2165,39,FishBase,St Croix
+409-01-03,Doctorfish,Acanthurus chirurgus,Acanthurus,Acanthuridae,Perciformes,39,2,0.0041,3.5328,Herbivore,Roving Herbivore,,,Minor commercial,-5.9255,39,Bohnsack & Harper 1988,S Florida
+409-01-01,Ocean Surgeonfish,Acanthurus bahianus,Acanthurus,Acanthuridae,Perciformes,38,2,0.0236,2.9752,Herbivore,Roving Herbivore,,,Minor commercial,-4.6005,38,Bohnsack & Harper 1988,S Florida
+254-01-11,Trumpetfish,Aulostomus maculatus,Aulostomus,Aulostomidae,Syngnathiformes,100,4.3,0.004,2.8657,Carnivore,Carnivore - mainly fish,,,Minor commercial,-5.2686,100,Bohnsack & Harper 1988,S Florida
+395-00-00,Blenny Family,Blenniidae,Blenniidae,Blenniidae,Perciformes,12,,,,Herbivore,Small Territorial Herbivore,,,Aquarium,,12,,
+395-07-11,Seaweed Blenny,Parablennius marmoreus,Parablennius,Blenniidae,Perciformes,9,,0.0109,3.0249,Omnivore,Omnivore,,,Aquarium,,9,FishBase,Mean for Genus
+306-02-16,Bar Jack,Carangoides ruber,Carangoides,Carangidae,Perciformes,59,3.8,0.018,2.99,Carnivore,Carnivore - mainly fish,,,Moderate commercial,-5.3687,59,FishBase,Cuba
+394-01-13,Papillose Blenny,Acanthemblemaria chaplini,Acanthemblemaria,Chaenopsidae,Perciformes,4,,0.0077,2.962,Invertivore,Mobile Invert Feeder,,,Not Marketed/Unknown,,4,FishBase,mean for genus
+394-01-19,Spinyhead Blenny,Acanthemblemaria spinosa,Acanthemblemaria,Chaenopsidae,Perciformes,3,,0.0077,2.962,Invertivore,Mobile Invert Feeder,,,Not Marketed/Unknown,,3,FishBase,Mean for Genus
+394-01-15,Secretary Blenny,Acanthemblemaria maria,Acanthemblemaria,Chaenopsidae,Perciformes,5,,0.0077,2.96,Invertivore,Mobile Invert Feeder,,,Not Marketed/Unknown,,5,FishBase,Mean for Genus
+338-01-13,Foureye Butterflyfish,Chaetodon capistratus,Chaetodon,Chaetodontidae,Perciformes,8,3.2,0.047,2.86,Invertivore,Sessile Invert Feeder,,,Aquarium,-3.0577,8,FishBase,Cuba
+338-01-15,Spotfin Butterflyfish,Chaetodon ocellatus,Chaetodon,Chaetodontidae,Perciformes,20,3.2,0.0318,2.984,Invertivore,Sessile Invert Feeder,,,Aquarium,,20,FishBase,S Florida
+338-01-17,Banded Butterflyfish,Chaetodon striatus,Chaetodon,Chaetodontidae,Perciformes,16,3.2,0.0222,3.14,Invertivore,Mobile Invert Feeder,,,Aquarium,-3.9077,16,FishBase,Southern Florida
+403-01-01,Colon Goby,Coryphopterus dicrus,Coryphopterus,Gobiidae,Perciformes,5,2.5,0.0213,2.2835,Omnivore,Omnivore,,,Aquarium,,5,FishBase,Mean for Genus
+403-01-04,Bridled Goby,Coryphopterus glaucofraenum,Coryphopterus,Gobiidae,Perciformes,8,2.7,0.0345,2.68,Omnivore,Omnivore,,,Aquarium,,8,FishBase,Cuba
+403-05-01,Goldspot Goby,Gnatholepis thompsoni,Gnatholepis,Gobiidae,Perciformes,8,2.3,0.0035,3.766,Omnivore,Omnivore,,,Aquarium,,8,FishBase,"S Florida, n=9"
+403-01-05,Masked Goby,Coryphopterus personatus,Coryphopterus,Gobiidae,Perciformes,4,2.7,0.0213,2.8235,Planktivore,"Planktivore-small, site-attached",,,Aquarium,-3.849,4,FishBase,Mean for Genus
+403-01-03,Pallid Goby,Coryphopterus eidolon,Coryphopterus,Gobiidae,Perciformes,6,2.1,0.0213,2.2835,Herbivore,Small Territorial Herbivore,,,Aquarium,,6,FishBase,Mean for Genus
+403-00-01,Goby sp. unid.,Goby sp.,Goby,Gobiidae,Perciformes,8,,,,Omnivore,Omnivore,,,Aquarium,,8,,
+320-01-05,Bluestriped Grunt,Haemulon sciurus,Haemulon,Haemulidae,Perciformes,46,3.4,0.0194,2.9996,Invertivore,Mobile Invert Feeder,,,Minor commercial,-4.7114,46,Bohnsack & Harper 1988,S Florida
+320-01-04,White Grunt,Haemulon plumierii,Haemulon,Haemulidae,Perciformes,53,3.5,0.0121,3.1612,Invertivore,Mobile Invert Feeder,,,Minor commercial,-5.0781,53,Bohnsack & Harper 1988,S Florida
+320-02-01,Porkfish,Anisotremus virginicus,Anisotremus,Haemulidae,Perciformes,41,3.4,0.0148,3.167,Invertivore,Mobile Invert Feeder,Nocturnal,,Minor commercial,-4.2131,41,Bohnsack & Harper,Southern Florida
+320-01-01,French Grunt,Haemulon flavolineatum,Haemulon,Haemulidae,Perciformes,30,3.3,0.0211,3,Invertivore,Mobile Invert Feeder,,,Moderate commercial,,30,FishBase,Puerto Rico
+320-01-09,Spanish Grunt,Haemulon macrostomum,Haemulon,Haemulidae,Perciformes,43,3.3,0.0176,3.06,Invertivore,Mobile Invert Feeder,,,Minor commercial,,43,FishBase,Jamaica
+320-01-11,White Margate,Haemulon album,Haemulon,Haemulidae,Perciformes,79,3.2,0.014,3.09,Invertivore,Mobile Invert Feeder,,,Moderate commercial,-4.8186,79,FishBase,Cuba
+320-01-03,Smallmouth Grunt,Haemulon chrysargyreum,Haemulon,Haemulidae,Perciformes,23,3.4,0.0106,3.047,Invertivore,Mobile Invert Feeder,,,Minor commercial,-2.5578,23,Bohnsack & Harper 1988,S Florida
+320-01-02,Striped Grunt,Haemulon striatum,Haemulon,Haemulidae,Perciformes,28,,,3.0988,Planktivore,Planktivore-oceanic schooler,,,Minor commercial,-4.8564,28,Bohnsack & Harper 1988,S Florida
+320-01-00,Grunt unid. Species,Haemulon sp.,Haemulon,Haemulidae,Perciformes,79,3.4,0.0121,3.1581,Invertivore,Mobile Invert Feeder,,,Minor commercial,-5.0428,79,Bohnsack & Harper 1988,S Florida
+235-00-01,Squirrelfish,Holocentrus adscensionis,Holocentrus,Holocentridae,Beryciformes,61,3.5,0.0198,3,Invertivore,Mobile Invert Feeder,Nocturnal,,Minor commercial,,61,Bohnsack & Harper,S Florida
+334-01-01,Bermuda Chub,Kyphosus sectatrix,Kyphosus,Kyphosidae,Perciformes,76,2,0.0174,3.0801,Herbivore,Roving Herbivore,,,Minor commercial,-4.8397,76,Bohnsack & Harper 1988,S Florida
+334-01-00,Chub - unid.,Kyphosus sp.,Kyphosus,Kyphosidae,Perciformes,76,2,0.0174,3.08,Herbivore,Roving Herbivore,,,Minor commercial,,76,Bohnsack & Harper,S Florida
+358-05-11,Bluehead Wrasse,Thalassoma bifasciatum,Thalassoma,Labridae,Perciformes,25,3.3,0.0107,2.9162,Planktivore,Planktivore-oceanic schooler,,,Aquarium,-4.8865,25,Bohnsack & Harper 1988,S Florida
+358-04-16,Clown Wrasse,Halichoeres maculipinna,Halichoeres,Labridae,Perciformes,18,3.3,0.0028,3.6932,Invertivore,Mobile Invert Feeder,,,Aquarium,-6.2524,18,Bohnsack & Harper 1988,S Florida
+358-04-12,Puddingwife,Halichoeres radiatus,Halichoeres,Labridae,Perciformes,51,3.3,0.0131,3.0382,Invertivore,Mobile Invert Feeder,,,Minor commercial,-4.9221,51,Bohnsack & Harper 1988,S Florida
+358-04-17,Yellowhead Wrasse,Halichoeres garnoti,Halichoeres,Labridae,Perciformes,19,3.5,0.0052,3.3747,Invertivore,Mobile Invert Feeder,,,Aquarium,-5.6591,19,Bohnsack & Harper 1988,S Florida
+358-06-11,Spanish Hogfish,Bodianus rufus,Bodianus,Labridae,Perciformes,40,3.4,0.0145,3.0532,Invertivore,Mobile Invert Feeder,,,Minor commercial,-4.8936,40,Bohnsack & Harper 1988,S Florida
+358-04-15,Rainbow Wrasse,Halichoeres pictus,Halichoeres,Labridae,Perciformes,13,3.5,0.0126,3.0673,Invertivore,Mobile Invert Feeder,,,Aquarium,-4.37406,13,Fishbase,Mean for Genus
+358-07-11,Hogfish,Lachnolaimus maximus,Lachnolaimus,Labridae,Perciformes,91,3.5,0.0203,2.988,Invertivore,Mobile Invert Feeder,,,Minor commercial,-4.6801,91,Bohnsack & Harper 1988,S Florida
+358-04-11,Slippery Dick,Halichoeres bivittatus,Halichoeres,Labridae,Perciformes,35,3.5,0.0134,2.9391,Invertivore,Mobile Invert Feeder,,,Aquarium,-4.8117,35,Bohnsack & Harper 1988,S Florida
+358-04-00,Wrasse species-unid.,Halichoeres sp.,Halichoeres,Labridae,Perciformes,51,3.4,,,Invertivore,Mobile Invert Feeder,,,Aquarium,,51,,
+358-04-13,Blackear Wrasse,Halichoeres poeyi,Halichoeres,Labridae,Perciformes,20,3.4,0.0126,3.0673,Invertivore,Mobile Invert Feeder,,,Aquarium,,20,FishBase,Mean for Genus
+392-01-01,Saddled Blenny,Malacoctenus triangulatus,Malacoctenus,Labrisomidae,Perciformes,8,3.5,0.0089,2.3791,Invertivore,Mobile Invert Feeder,,,Aquarium,-3.868,8,Bohnsack & Harper 1988,S Florida
+392-01-05,Rosy Blenny,Malacoctenus macropus,Malacoctenus,Labrisomidae,Perciformes,6,,0.0341,2.72,Invertivore,Mobile Invert Feeder,,,Aquarium,,6,FishBase,"Cuba, n=23"
+316-01-15,Schoolmaster,Lutjanus apodus,Lutjanus,Lutjanidae,Perciformes,67,4.1,0.0194,2.9779,Carnivore,Carnivore - mainly fish,,,Moderate commercial,-4.6909,67,Bohnsack & Harper 1988,S Florida
+316-02-01,Yellowtail Snapper,Ocyurus chrysurus,Ocyurus,Lutjanidae,Perciformes,86,3.9,0.0405,2.718,Planktivore,Planktivore-oceanic schooler,Nocturnal,,Moderate commercial,-4.1108,86,Bohnsack & Harper 1988,S Florida
+500-01-01,Scrawled Filefish,Aluterus scriptus,Aluterus,Monacanthidae,Tetraodontiformes,110,2.8,0.0022,3,Omnivore,Omnivore,,,Moderate commercial,,110,FishBase,S Florida
+500-03-01,Slender Filefish,Monacanthus tuckeri,Monacanthus,Monacanthidae,Tetraodontiformes,10,2.7,0.0402,2.685,Omnivore,Omnivore,,,Not Marketed/Unknown,,10,,
+327-02-01,Spotted Goatfish,Pseudupeneus maculatus,Pseudupeneus,Mullidae,Perciformes,30,3.5,0.0229,2.958,Invertivore,Mobile Invert Feeder,,,Moderate commercial,-3.7767,30,FishBase,Puerto Rico
+054-01-04,Goldentail Moray,Gymnothorax miliaris,Gymnothorax,Muraenidae,Anguilliformes,70,3.9,0.0011,2.574,Carnivore,Carnivore - generalist,,,Minor commercial,-6.1561,70,Bohnsack & Harper 1988,S Florida
+375-01-01,Yellowhead Jawfish,Opistognathus aurifrons,Opistognathus,Opistognathidae,Perciformes,10,3.1,0.0119,2.995,Planktivore,"Planktivore-small, site-attached",,,Aquarium,,10,FishBase,Mean for Genus
+441-02-02,Smooth Trunkfish,Lactophrys triqueter,Lactophrys,Ostraciidae,Tetraodontiformes,47,3.1,0.0309,3,Invertivore,Mobile Invert Feeder,,,Minor commercial,-3.477,47,Bohnsack & Harper,S Florida
+339-01-01,Queen Angelfish,Holacanthus ciliaris,Holacanthus,Pomacanthidae,Perciformes,45,3,0.0337,2.9,Invertivore,Sessile Invert Feeder,,,Minor commercial,,45,Bohnsack & Harper,S Florida
+339-02-01,French Angelfish,Pomacanthus paru,Pomacanthus,Pomacanthidae,Perciformes,41,2.8,0.0203,3.126,Omnivore,Omnivore,,,Minor commercial,-3.8971,41,Bohnsack & Harper,S Florida
+339-02-02,Gray Angelfish,Pomacanthus arcuatus,Pomacanthus,Pomacanthidae,Perciformes,60,2.6,0.0345,2.968,Omnivore,Omnivore,,,Minor commercial,,60,Bohnsack & Harper,S Florida
+339-01-03,Rock Beauty,Holacanthus tricolor,Holacanthus,Pomacanthidae,Perciformes,35,3,0.0428,2.858,Invertivore,Sessile Invert Feeder,,,Minor commercial,-3.1512,35,FishBase,S Florida
+339-01-02,Blue Angelfish,Holacanthus bermudensis,Holacanthus,Pomacanthidae,Perciformes,45,3.3,0.0319,2.899,Invertivore,Sessile Invert Feeder,,,Moderate commercial,,45,Bohnsack & Harper,S Florida
+346-02-11,Longfin Damselfish,Stegastes diencaeus,Stegastes,Pomacentridae,Perciformes,12,,0.0349,2.8956,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.3479,12,Bohnsack & Harper 1988,S Florida
+346-03-11,Yellowtail Damselfish,Microspathodon chrysurus,Microspathodon,Pomacentridae,Perciformes,21,2.1,0.0239,3.0825,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.7033,21,Bohnsack & Harper 1988,S Florida
+346-02-16,Bicolor Damselfish,Stegastes partitus,Stegastes,Pomacentridae,Perciformes,10,,0.0182,3.1519,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.8921,10,Bohnsack & Harper 1988,
+346-05-12,Blue Chromis,Chromis cyanea,Chromis,Pomacentridae,Perciformes,15,3.1,0.0204,2.9595,Planktivore,"Planktivore-small, site-attached",,,Aquarium,-3.9021,15,FishBase,Mean for Genus
+346-02-12,Dusky Damselfish,Stegastes dorsopunicans,Stegastes,Pomacentridae,Perciformes,15,2.5,0.0349,2.8956,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.3479,15,Bohnsack & Harper 1988,
+346-04-11,Sergeant Major,Abudefduf saxatilis,Abudefduf,Pomacentridae,Perciformes,23,3.4,0.02227,3.142,Omnivore,Omnivore,,4.4,Minor commercial,-4.7859,23,Bohnsack & Harper 1988,Southern Florida
+346-02-14,Cocoa Damselfish,Stegastes variabilis,Stegastes,Pomacentridae,Perciformes,12,,0.0324,2.8365,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.3258,12,Bohnsack & Harper 1988,S Florida
+346-02-13,Threespot Damselfish,Stegastes planifrons,Stegastes,Pomacentridae,Perciformes,13,,0.0379,2.8569,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.2782,13,Bohnsack & Harper 1988,S Florida
+346-05-13,Brown Chromis,Chromis multilineata,Chromis,Pomacentridae,Perciformes,20,3,0.0204,2.9595,Planktivore,"Planktivore-small, site-attached",,,Minor commercial,-3.9021,20,FishBase,mean for Genus
+346-02-15,Beaugregory,Stegastes leucostictus,Stegastes,Pomacentridae,Perciformes,10,3.1,0.0303,2.8868,Herbivore,Small Territorial Herbivore,,,Aquarium,-4.4057,10,Bohnsack & Harper 1988,
+360-05-12,Redband Parrotfish,Sparisoma aurofrenatum,Sparisoma,Scaridae,Perciformes,28,2,0.0047,3.4291,Herbivore,Roving Herbivore,,,Minor commercial,-5.7587,28,Bohnsack & Harper 1988,S Florida
+360-09-16,Striped Parrotfish,Scarus iserti,Scarus,Scaridae,Perciformes,35,2,0.0166,3.0548,Herbivore,Roving Herbivore,,,Minor commercial,-4.8887,35,Bohnsack & Harper 1988,S Florida
+360-09-15,Princess Parrotfish,Scarus taeniopterus,Scarus,Scaridae,Perciformes,35,2,0.0177,3,Herbivore,Roving Herbivore,,,Minor commercial,,35,FishBase,USVI
+360-05-11,Stoplight Parrotfish,Sparisoma viride,Sparisoma,Scaridae,Perciformes,64,2,0.037,2.905,Herbivore,Roving Herbivore,,,Minor commercial,,64,FishBase,USVI
+360-09-11,Blue Parrotfish,Scarus coeruleus,Scarus,Scaridae,Perciformes,120,2,0.0124,3.1109,Herbivore,Roving Herbivore,,,Minor commercial,-5.0162,120,Bohnsack & Harper 1988,S Florida
+360-09-14,Queen Parrotfish,Scarus vetula,Scarus,Scaridae,Perciformes,61,2,0.0177,3.33,Herbivore,Roving Herbivore,,,Minor commercial,-5.5396,61,Bohnsack & Harper 1988,Florida Keys
+360-09-12,Midnight Parrotfish,Scarus coelestinus,Scarus,Scaridae,Perciformes,77,2,0.0201,3.02,Herbivore,Roving Herbivore,,,Minor commercial,,77,FishBase,"Cuba, n=41"
+360-09-13,Rainbow Parrotfish,Scarus guacamaia,Scarus,Scaridae,Perciformes,120,2,0.0155,3.0626,Herbivore,Roving Herbivore,,,Minor commercial,-4.8714,120,Bohnsack & Harper 1988,S Florida
+360-05-13,Redtail Parrotfish,Sparisoma chrysopterum,Sparisoma,Scaridae,Perciformes,46,2,0.0099,3.1708,Herbivore,Roving Herbivore,,,Minor commercial,-5.1754,46,Bohnsack & Harper 1988,S Florida
+360-05-14,Yellowtail Parrotfish,Sparisoma rubripinne,Sparisoma,Scaridae,Perciformes,48,2,0.0156,3.0641,Herbivore,Roving Herbivore,,,Minor commercial,-4.8701,48,Bohnsack & Harper 1988,"S Florida, n=2"
+360-00-01,Scarid - unidentified,Scarid sp.,Scarid,Scaridae,Perciformes,120,2,,,Herbivore,Roving Herbivore,,,Moderate commercial,,120,,
+360-05-15,Greenblotch Parrotfish,Sparisoma atomarium,Sparisoma,Scaridae,Perciformes,25,2,0.0122,3.0275,Herbivore,Roving Herbivore,,,Aquarium,-4.9446,25,Bohnsack & Harper 1988,S Florida
+414-03-02,Cero,Scomberomorus regalis,Scomberomorus,Scombridae,Perciformes,183,4.5,0.0202,2.8,Piscivore,Piscivore - Nektonic,Pelagic,,Minor commercial,,183,FishBase,Cuba
+284-01-18,Graysby,Cephalopholis cruentata,Cephalopholis,Serranidae,Perciformes,43,4.2,0.0121,3.082,Carnivore,Carnivore - mainly fish,,,Moderate commercial,,43,FishBase,Curacao
+284-04-01,Indigo Hamlet,Hypoplectrus indigo,Hypoplectrus,Serranidae,Perciformes,14,,0.0099,3.1818,Carnivore,Carnivore - mainly inverts,,,Aquarium,-5.1419,14,Bohnsack & Harper 1988,S Florida
+284-04-02,Barred Hamlet,Hypoplectrus puella,Hypoplectrus,Serranidae,Perciformes,15,3.7,0.0099,3.1818,Carnivore,Carnivore - mainly inverts,,,Aquarium,-5.1419,15,Bohnsack & Harper 1988,S Florida
+284-04-04,Butter Hamlet,Hypoplectrus unicolor,Hypoplectrus,Serranidae,Perciformes,13,3.97,0.0099,3.1818,Carnivore,Carnivore - generalist,,,Aquarium,-5.1419,13,Bohnsack & Harper 1988,S Florida
+284-04-08,Black Hamlet,Hypoplectrus nigricans,Hypoplectrus,Serranidae,Perciformes,15,4,0.0099,3.1818,Carnivore,Carnivore - generalist,,,Aquarium,-5.1419,15,Bohnsack & Harper 1988,S Florida
+284-04-00,Hamlet species,Hypoplectrus sp.,Hypoplectrus,Serranidae,Perciformes,15,,0.0099,3.1818,Carnivore,Carnivore - generalist,,,Aquarium,-5.1419,15,Bohnsack & Harper 1988,S Florida
+356-01-02,Barracuda,Sphyraena barracuda,Sphyraena,Sphyraenidae,Perciformes,200,4.5,0.0063,3,Piscivore,Piscivore - Nektonic,,,Minor commercial,,200,FishBase,Cuba
+443-02-01,Sharpnose Puffer,Canthigaster rostrata,Canthigaster,Tetraodontidae,Tetraodontiformes,12,3,0.0197,2.9174,Omnivore,Omnivore,,,Aquarium,-3.9271,12,FishBase,Mean for Genus
+396-01-11,Roughead Blenny,Enneanectes boehlkei,Enneanectes,Tripterygiidae,Perciformes,4,,0.0141,3.05,Herbivore,Small Territorial Herbivore,,,Aquarium,,4,FishBase,Mean for Genus
+023-01-01,Yellow Stingray,Urobatis jamaicensis,Urobatis,Urolophidae,Rajiformes,76,3.6,0.0072,3.0826,Carnivore,Carnivore - generalist,,,Aquarium,-5.2244,76,Bohnsack & Harper 1988,S Florida

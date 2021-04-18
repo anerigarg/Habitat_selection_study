@@ -1,0 +1,5 @@
+plot,complexity,replicate_N_or_S
+LS,Low,S
+HS,High,S
+LN,Low,N
+HN,High,N
